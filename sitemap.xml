@@ -1,24 +1,9 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     
         <url>
-            <loc>https://trust-dns.github.io/trust-dns-docs/blog/page/1/</loc>
+            <loc>https://trust-dns.github.io/trust-dns-docs/blog/post/</loc>
             
-        </url>
-    
-        <url>
-            <loc>https://trust-dns.github.io/trust-dns-docs/contributing/</loc>
-            
-                <lastmod>2019-04-18</lastmod>
-            
-        </url>
-    
-        <url>
-            <loc>https://trust-dns.github.io/trust-dns-docs/blog/</loc>
-            
-        </url>
-    
-        <url>
-            <loc>https://trust-dns.github.io/trust-dns-docs/</loc>
+                <lastmod>2018-08-30</lastmod>
             
         </url>
     
@@ -30,9 +15,14 @@
         </url>
     
         <url>
-            <loc>https://trust-dns.github.io/trust-dns-docs/blog/post/</loc>
+            <loc>https://trust-dns.github.io/trust-dns-docs/blog/</loc>
             
-                <lastmod>2018-08-30</lastmod>
+        </url>
+    
+        <url>
+            <loc>https://trust-dns.github.io/trust-dns-docs/contributing/</loc>
+            
+                <lastmod>2019-04-18</lastmod>
             
         </url>
     
@@ -40,6 +30,16 @@
             <loc>https://trust-dns.github.io/trust-dns-docs/book/</loc>
             
                 <lastmod>2019-04-18</lastmod>
+            
+        </url>
+    
+        <url>
+            <loc>https://trust-dns.github.io/trust-dns-docs/blog/page/1/</loc>
+            
+        </url>
+    
+        <url>
+            <loc>https://trust-dns.github.io/trust-dns-docs/</loc>
             
         </url>
     
