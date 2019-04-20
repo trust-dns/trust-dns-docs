@@ -1,2 +1,2 @@
 User-agent: *
-Sitemap: http://trust-dns.org/sitemap.xml
+Sitemap: https://trust-dns.github.io/trust-dns-docs/sitemap.xml
