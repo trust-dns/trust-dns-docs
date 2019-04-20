@@ -1,0 +1,2 @@
+User-agent: *
+Sitemap: http://trust-dns.org/sitemap.xml
