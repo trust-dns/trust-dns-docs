@@ -1,0 +1,42 @@
+# The URL the site will be built for
+base_url = "http://trust-dns.org"
+
+#theme = "Ergo2"
+
+# Whether to automatically compile all Sass files in the sass directory
+compile_sass = true
+
+# Whether to do syntax highlighting
+# Theme can be customised by setting the `highlight_theme` variable to a theme supported by Zola
+highlight_code = true
+
+# Whether to build a search index to be used later on by a JavaScript library
+build_search_index = true
+
+title = "Trust-DNS"
+
+[extra]
+# Put all your custom variables here
+
+header_bg = "beehive-cluster.jpg"
+# Specify a profile picture to use for the logos in the theme. It can be svg, png, jpg, whatever, just make sure to copy the logo you want and put it in img/${YOUR_PROFILE}.*
+# and update your config.toml accordingly
+profile = "logo.svg"
+
+
+description = "Safe and Secure DNS"
+
+# website, should not be preceded with `http://`
+#website = "code.liquidthink.net"
+
+# github
+github = "bluejekyll/trust-dns" # case does not matter
+# twitter
+twitter = "blue_jekyll"
+# email
+# email = "benjaminfry@me.com"
+# instagram
+#instagram = "${your_insta}"
+# youtube
+#youtube = "${your_youtube_channel_id}"
+# if any social networks are missing from this list that you want added, open an issue. I will add it for you ASAP

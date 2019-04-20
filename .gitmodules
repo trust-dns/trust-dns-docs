@@ -1,0 +1,3 @@
+[submodule "trust-dns"]
+	path = trust-dns
+	url = git@github.com:bluejekyll/trust-dns.git

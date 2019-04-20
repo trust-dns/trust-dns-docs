@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% import "macros.html" as macros %}
+
+
+{% block content %}
+<header class="header" style="background-image: url(/img/{{config.extra.header_bg}})">
+  {% block header %}
+  <figure class="user_logo">
+    <a href="{{config.base_url}}">
+      <img src="/img/{{config.extra.profile}}" />
+    </a>
+  </figure>
+  <h2 class="site_title">{{config.extra.description}}</h2>
+  <div>{{config.description}}</div>
+  <span class="center">
+    {{ macros::social_list(classes="header_list", bsize="small", extra=config.extra, siteurl=config.base_url, rss=config.generate_rss) }}
+  </span>
+  {% endblock header %}
+</header>
+
+<section class="index_card_list">
+  {% for page in section.pages %}
+  <article id="{{page.title}}" class="index_card">
+    <h1 class="index_card_title">
+      {% if page.extra.link %}
+      <a href="{{page.extra.link}}" id="article_link">{{page.title}}</a>
+      {% else %}
+      <a href="{{page.permalink}}" id="article_link">{{page.title}}</a>
+      {% endif %}
+    </h1>
+    <!--{% if page.date %}
+    {{ macros::frontmatter(classes="", date=page.date, word_count=page.word_count, read_time=page.reading_time) }}
+    {% else %}
+    {{ macros::frontmatter(classes="", date="", word_count=page.word_count, read_time=page.reading_time) }}
+    {% endif %}
+    -->
+    <p class="article_content">{{ page.content | safe | striptags | truncate }}</p>
+    <!-- this links to the actual book -->
+    {% if page.extra.link %}
+    <a class="button small bottom" href="{{page.extra.link}}">Continue Reading →</a>
+    {% else %}
+    <a class="button small bottom" href="{{page.permalink}}">Continue Reading →</a>
+    {% endif %}
+  </article>
+  {% endfor %}
+</section>
+{% endblock content %}
+
+
+<!--
+{% block pagination %}
+<nav class="pagination">
+  {% if paginator.previous %}
+  <span class="prev"><a rel="prev" href="{{paginator.previous}}" class="button medium font_faint">← prev</a></span>
+  {% endif %}
+
+  {% if paginator.next %}
+  <span class="next"><a rel="next" href="{{paginator.next}}" class="button medium font_faint">next →</a></span>
+  {% endif %}
+</nav>
+{% endblock pagination %}
+-->
