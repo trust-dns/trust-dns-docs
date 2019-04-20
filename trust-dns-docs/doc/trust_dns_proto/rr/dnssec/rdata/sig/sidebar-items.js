@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["emit","RFC 4034, DNSSEC Resource Records, March 2005"],["emit_pre_sig","specifically for outputing the RData for an RRSIG, with signer_name in canonical form"],["read","Read the RData from the given Decoder"]],"struct":[["SIG","RFC 2535, Domain Name System Security Extensions, March 1999"]]});

@@ -1,0 +1,12 @@
+(function() {var implementors = {};
+implementors["trust_dns_proto"] = [{text:"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/ops/deref/trait.DerefMut.html\" title=\"trait core::ops::deref::DerefMut\">DerefMut</a> for <a class=\"struct\" href=\"trust_dns_proto/xfer/dns_request/struct.DnsRequest.html\" title=\"struct trust_dns_proto::xfer::dns_request::DnsRequest\">DnsRequest</a>",synthetic:false,types:["trust_dns_proto::xfer::dns_request::DnsRequest"]},{text:"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/ops/deref/trait.DerefMut.html\" title=\"trait core::ops::deref::DerefMut\">DerefMut</a> for <a class=\"struct\" href=\"trust_dns_proto/xfer/dns_response/struct.DnsResponse.html\" title=\"struct trust_dns_proto::xfer::dns_response::DnsResponse\">DnsResponse</a>",synthetic:false,types:["trust_dns_proto::xfer::dns_response::DnsResponse"]},];
+implementors["trust_dns_resolver"] = [{text:"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/ops/deref/trait.DerefMut.html\" title=\"trait core::ops::deref::DerefMut\">DerefMut</a> for <a class=\"struct\" href=\"trust_dns_resolver/config/struct.NameServerConfigGroup.html\" title=\"struct trust_dns_resolver::config::NameServerConfigGroup\">NameServerConfigGroup</a>",synthetic:false,types:["trust_dns_resolver::config::NameServerConfigGroup"]},];
+implementors["trust_dns_server"] = [{text:"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/ops/deref/trait.DerefMut.html\" title=\"trait core::ops::deref::DerefMut\">DerefMut</a> for <a class=\"struct\" href=\"trust_dns_server/store/file/struct.FileAuthority.html\" title=\"struct trust_dns_server::store::file::FileAuthority\">FileAuthority</a>",synthetic:false,types:["trust_dns_server::store::file::authority::FileAuthority"]},{text:"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/ops/deref/trait.DerefMut.html\" title=\"trait core::ops::deref::DerefMut\">DerefMut</a> for <a class=\"struct\" href=\"trust_dns_server/store/sqlite/authority/struct.SqliteAuthority.html\" title=\"struct trust_dns_server::store::sqlite::authority::SqliteAuthority\">SqliteAuthority</a>",synthetic:false,types:["trust_dns_server::store::sqlite::authority::SqliteAuthority"]},];
+
+            if (window.register_implementors) {
+                window.register_implementors(implementors);
+            } else {
+                window.pending_implementors = implementors;
+            }
+        
+})()

@@ -1,0 +1,1 @@
+initSidebarItems({"constant":[["CURRENT_VERSION","The current Journal version of the application"]],"struct":[["Journal","The Journal is the audit log of all changes to a zone after initial creation."],["JournalIter","Returns an iterator over all items in a Journal"]]});

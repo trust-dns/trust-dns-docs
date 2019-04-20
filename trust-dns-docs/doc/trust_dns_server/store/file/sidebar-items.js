@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["FileAuthority","FileAuthority is responsible for storing the resource records for a particular zone."],["FileConfig","Configuration for master file based zones"]]});

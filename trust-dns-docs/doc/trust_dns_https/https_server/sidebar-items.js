@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["message_from","Given an HTTP request, return a future that will result in the next sequence of bytes."]],"struct":[["HttpsToMessage","A Future result of the bytes of a DNS message"]]});

@@ -1,0 +1,1803 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `crates/proto/src/xfer/secure_dns_handle.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>secure_dns_handle.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css"><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../trust_dns_proto/index.html'><img src='../../../rust-logo.png' alt='logo' width='100'></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form js-only"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<span id="2">  2</span>
+<span id="3">  3</span>
+<span id="4">  4</span>
+<span id="5">  5</span>
+<span id="6">  6</span>
+<span id="7">  7</span>
+<span id="8">  8</span>
+<span id="9">  9</span>
+<span id="10"> 10</span>
+<span id="11"> 11</span>
+<span id="12"> 12</span>
+<span id="13"> 13</span>
+<span id="14"> 14</span>
+<span id="15"> 15</span>
+<span id="16"> 16</span>
+<span id="17"> 17</span>
+<span id="18"> 18</span>
+<span id="19"> 19</span>
+<span id="20"> 20</span>
+<span id="21"> 21</span>
+<span id="22"> 22</span>
+<span id="23"> 23</span>
+<span id="24"> 24</span>
+<span id="25"> 25</span>
+<span id="26"> 26</span>
+<span id="27"> 27</span>
+<span id="28"> 28</span>
+<span id="29"> 29</span>
+<span id="30"> 30</span>
+<span id="31"> 31</span>
+<span id="32"> 32</span>
+<span id="33"> 33</span>
+<span id="34"> 34</span>
+<span id="35"> 35</span>
+<span id="36"> 36</span>
+<span id="37"> 37</span>
+<span id="38"> 38</span>
+<span id="39"> 39</span>
+<span id="40"> 40</span>
+<span id="41"> 41</span>
+<span id="42"> 42</span>
+<span id="43"> 43</span>
+<span id="44"> 44</span>
+<span id="45"> 45</span>
+<span id="46"> 46</span>
+<span id="47"> 47</span>
+<span id="48"> 48</span>
+<span id="49"> 49</span>
+<span id="50"> 50</span>
+<span id="51"> 51</span>
+<span id="52"> 52</span>
+<span id="53"> 53</span>
+<span id="54"> 54</span>
+<span id="55"> 55</span>
+<span id="56"> 56</span>
+<span id="57"> 57</span>
+<span id="58"> 58</span>
+<span id="59"> 59</span>
+<span id="60"> 60</span>
+<span id="61"> 61</span>
+<span id="62"> 62</span>
+<span id="63"> 63</span>
+<span id="64"> 64</span>
+<span id="65"> 65</span>
+<span id="66"> 66</span>
+<span id="67"> 67</span>
+<span id="68"> 68</span>
+<span id="69"> 69</span>
+<span id="70"> 70</span>
+<span id="71"> 71</span>
+<span id="72"> 72</span>
+<span id="73"> 73</span>
+<span id="74"> 74</span>
+<span id="75"> 75</span>
+<span id="76"> 76</span>
+<span id="77"> 77</span>
+<span id="78"> 78</span>
+<span id="79"> 79</span>
+<span id="80"> 80</span>
+<span id="81"> 81</span>
+<span id="82"> 82</span>
+<span id="83"> 83</span>
+<span id="84"> 84</span>
+<span id="85"> 85</span>
+<span id="86"> 86</span>
+<span id="87"> 87</span>
+<span id="88"> 88</span>
+<span id="89"> 89</span>
+<span id="90"> 90</span>
+<span id="91"> 91</span>
+<span id="92"> 92</span>
+<span id="93"> 93</span>
+<span id="94"> 94</span>
+<span id="95"> 95</span>
+<span id="96"> 96</span>
+<span id="97"> 97</span>
+<span id="98"> 98</span>
+<span id="99"> 99</span>
+<span id="100">100</span>
+<span id="101">101</span>
+<span id="102">102</span>
+<span id="103">103</span>
+<span id="104">104</span>
+<span id="105">105</span>
+<span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
+<span id="129">129</span>
+<span id="130">130</span>
+<span id="131">131</span>
+<span id="132">132</span>
+<span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
+<span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
+<span id="180">180</span>
+<span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
+<span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
+<span id="231">231</span>
+<span id="232">232</span>
+<span id="233">233</span>
+<span id="234">234</span>
+<span id="235">235</span>
+<span id="236">236</span>
+<span id="237">237</span>
+<span id="238">238</span>
+<span id="239">239</span>
+<span id="240">240</span>
+<span id="241">241</span>
+<span id="242">242</span>
+<span id="243">243</span>
+<span id="244">244</span>
+<span id="245">245</span>
+<span id="246">246</span>
+<span id="247">247</span>
+<span id="248">248</span>
+<span id="249">249</span>
+<span id="250">250</span>
+<span id="251">251</span>
+<span id="252">252</span>
+<span id="253">253</span>
+<span id="254">254</span>
+<span id="255">255</span>
+<span id="256">256</span>
+<span id="257">257</span>
+<span id="258">258</span>
+<span id="259">259</span>
+<span id="260">260</span>
+<span id="261">261</span>
+<span id="262">262</span>
+<span id="263">263</span>
+<span id="264">264</span>
+<span id="265">265</span>
+<span id="266">266</span>
+<span id="267">267</span>
+<span id="268">268</span>
+<span id="269">269</span>
+<span id="270">270</span>
+<span id="271">271</span>
+<span id="272">272</span>
+<span id="273">273</span>
+<span id="274">274</span>
+<span id="275">275</span>
+<span id="276">276</span>
+<span id="277">277</span>
+<span id="278">278</span>
+<span id="279">279</span>
+<span id="280">280</span>
+<span id="281">281</span>
+<span id="282">282</span>
+<span id="283">283</span>
+<span id="284">284</span>
+<span id="285">285</span>
+<span id="286">286</span>
+<span id="287">287</span>
+<span id="288">288</span>
+<span id="289">289</span>
+<span id="290">290</span>
+<span id="291">291</span>
+<span id="292">292</span>
+<span id="293">293</span>
+<span id="294">294</span>
+<span id="295">295</span>
+<span id="296">296</span>
+<span id="297">297</span>
+<span id="298">298</span>
+<span id="299">299</span>
+<span id="300">300</span>
+<span id="301">301</span>
+<span id="302">302</span>
+<span id="303">303</span>
+<span id="304">304</span>
+<span id="305">305</span>
+<span id="306">306</span>
+<span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
+<span id="314">314</span>
+<span id="315">315</span>
+<span id="316">316</span>
+<span id="317">317</span>
+<span id="318">318</span>
+<span id="319">319</span>
+<span id="320">320</span>
+<span id="321">321</span>
+<span id="322">322</span>
+<span id="323">323</span>
+<span id="324">324</span>
+<span id="325">325</span>
+<span id="326">326</span>
+<span id="327">327</span>
+<span id="328">328</span>
+<span id="329">329</span>
+<span id="330">330</span>
+<span id="331">331</span>
+<span id="332">332</span>
+<span id="333">333</span>
+<span id="334">334</span>
+<span id="335">335</span>
+<span id="336">336</span>
+<span id="337">337</span>
+<span id="338">338</span>
+<span id="339">339</span>
+<span id="340">340</span>
+<span id="341">341</span>
+<span id="342">342</span>
+<span id="343">343</span>
+<span id="344">344</span>
+<span id="345">345</span>
+<span id="346">346</span>
+<span id="347">347</span>
+<span id="348">348</span>
+<span id="349">349</span>
+<span id="350">350</span>
+<span id="351">351</span>
+<span id="352">352</span>
+<span id="353">353</span>
+<span id="354">354</span>
+<span id="355">355</span>
+<span id="356">356</span>
+<span id="357">357</span>
+<span id="358">358</span>
+<span id="359">359</span>
+<span id="360">360</span>
+<span id="361">361</span>
+<span id="362">362</span>
+<span id="363">363</span>
+<span id="364">364</span>
+<span id="365">365</span>
+<span id="366">366</span>
+<span id="367">367</span>
+<span id="368">368</span>
+<span id="369">369</span>
+<span id="370">370</span>
+<span id="371">371</span>
+<span id="372">372</span>
+<span id="373">373</span>
+<span id="374">374</span>
+<span id="375">375</span>
+<span id="376">376</span>
+<span id="377">377</span>
+<span id="378">378</span>
+<span id="379">379</span>
+<span id="380">380</span>
+<span id="381">381</span>
+<span id="382">382</span>
+<span id="383">383</span>
+<span id="384">384</span>
+<span id="385">385</span>
+<span id="386">386</span>
+<span id="387">387</span>
+<span id="388">388</span>
+<span id="389">389</span>
+<span id="390">390</span>
+<span id="391">391</span>
+<span id="392">392</span>
+<span id="393">393</span>
+<span id="394">394</span>
+<span id="395">395</span>
+<span id="396">396</span>
+<span id="397">397</span>
+<span id="398">398</span>
+<span id="399">399</span>
+<span id="400">400</span>
+<span id="401">401</span>
+<span id="402">402</span>
+<span id="403">403</span>
+<span id="404">404</span>
+<span id="405">405</span>
+<span id="406">406</span>
+<span id="407">407</span>
+<span id="408">408</span>
+<span id="409">409</span>
+<span id="410">410</span>
+<span id="411">411</span>
+<span id="412">412</span>
+<span id="413">413</span>
+<span id="414">414</span>
+<span id="415">415</span>
+<span id="416">416</span>
+<span id="417">417</span>
+<span id="418">418</span>
+<span id="419">419</span>
+<span id="420">420</span>
+<span id="421">421</span>
+<span id="422">422</span>
+<span id="423">423</span>
+<span id="424">424</span>
+<span id="425">425</span>
+<span id="426">426</span>
+<span id="427">427</span>
+<span id="428">428</span>
+<span id="429">429</span>
+<span id="430">430</span>
+<span id="431">431</span>
+<span id="432">432</span>
+<span id="433">433</span>
+<span id="434">434</span>
+<span id="435">435</span>
+<span id="436">436</span>
+<span id="437">437</span>
+<span id="438">438</span>
+<span id="439">439</span>
+<span id="440">440</span>
+<span id="441">441</span>
+<span id="442">442</span>
+<span id="443">443</span>
+<span id="444">444</span>
+<span id="445">445</span>
+<span id="446">446</span>
+<span id="447">447</span>
+<span id="448">448</span>
+<span id="449">449</span>
+<span id="450">450</span>
+<span id="451">451</span>
+<span id="452">452</span>
+<span id="453">453</span>
+<span id="454">454</span>
+<span id="455">455</span>
+<span id="456">456</span>
+<span id="457">457</span>
+<span id="458">458</span>
+<span id="459">459</span>
+<span id="460">460</span>
+<span id="461">461</span>
+<span id="462">462</span>
+<span id="463">463</span>
+<span id="464">464</span>
+<span id="465">465</span>
+<span id="466">466</span>
+<span id="467">467</span>
+<span id="468">468</span>
+<span id="469">469</span>
+<span id="470">470</span>
+<span id="471">471</span>
+<span id="472">472</span>
+<span id="473">473</span>
+<span id="474">474</span>
+<span id="475">475</span>
+<span id="476">476</span>
+<span id="477">477</span>
+<span id="478">478</span>
+<span id="479">479</span>
+<span id="480">480</span>
+<span id="481">481</span>
+<span id="482">482</span>
+<span id="483">483</span>
+<span id="484">484</span>
+<span id="485">485</span>
+<span id="486">486</span>
+<span id="487">487</span>
+<span id="488">488</span>
+<span id="489">489</span>
+<span id="490">490</span>
+<span id="491">491</span>
+<span id="492">492</span>
+<span id="493">493</span>
+<span id="494">494</span>
+<span id="495">495</span>
+<span id="496">496</span>
+<span id="497">497</span>
+<span id="498">498</span>
+<span id="499">499</span>
+<span id="500">500</span>
+<span id="501">501</span>
+<span id="502">502</span>
+<span id="503">503</span>
+<span id="504">504</span>
+<span id="505">505</span>
+<span id="506">506</span>
+<span id="507">507</span>
+<span id="508">508</span>
+<span id="509">509</span>
+<span id="510">510</span>
+<span id="511">511</span>
+<span id="512">512</span>
+<span id="513">513</span>
+<span id="514">514</span>
+<span id="515">515</span>
+<span id="516">516</span>
+<span id="517">517</span>
+<span id="518">518</span>
+<span id="519">519</span>
+<span id="520">520</span>
+<span id="521">521</span>
+<span id="522">522</span>
+<span id="523">523</span>
+<span id="524">524</span>
+<span id="525">525</span>
+<span id="526">526</span>
+<span id="527">527</span>
+<span id="528">528</span>
+<span id="529">529</span>
+<span id="530">530</span>
+<span id="531">531</span>
+<span id="532">532</span>
+<span id="533">533</span>
+<span id="534">534</span>
+<span id="535">535</span>
+<span id="536">536</span>
+<span id="537">537</span>
+<span id="538">538</span>
+<span id="539">539</span>
+<span id="540">540</span>
+<span id="541">541</span>
+<span id="542">542</span>
+<span id="543">543</span>
+<span id="544">544</span>
+<span id="545">545</span>
+<span id="546">546</span>
+<span id="547">547</span>
+<span id="548">548</span>
+<span id="549">549</span>
+<span id="550">550</span>
+<span id="551">551</span>
+<span id="552">552</span>
+<span id="553">553</span>
+<span id="554">554</span>
+<span id="555">555</span>
+<span id="556">556</span>
+<span id="557">557</span>
+<span id="558">558</span>
+<span id="559">559</span>
+<span id="560">560</span>
+<span id="561">561</span>
+<span id="562">562</span>
+<span id="563">563</span>
+<span id="564">564</span>
+<span id="565">565</span>
+<span id="566">566</span>
+<span id="567">567</span>
+<span id="568">568</span>
+<span id="569">569</span>
+<span id="570">570</span>
+<span id="571">571</span>
+<span id="572">572</span>
+<span id="573">573</span>
+<span id="574">574</span>
+<span id="575">575</span>
+<span id="576">576</span>
+<span id="577">577</span>
+<span id="578">578</span>
+<span id="579">579</span>
+<span id="580">580</span>
+<span id="581">581</span>
+<span id="582">582</span>
+<span id="583">583</span>
+<span id="584">584</span>
+<span id="585">585</span>
+<span id="586">586</span>
+<span id="587">587</span>
+<span id="588">588</span>
+<span id="589">589</span>
+<span id="590">590</span>
+<span id="591">591</span>
+<span id="592">592</span>
+<span id="593">593</span>
+<span id="594">594</span>
+<span id="595">595</span>
+<span id="596">596</span>
+<span id="597">597</span>
+<span id="598">598</span>
+<span id="599">599</span>
+<span id="600">600</span>
+<span id="601">601</span>
+<span id="602">602</span>
+<span id="603">603</span>
+<span id="604">604</span>
+<span id="605">605</span>
+<span id="606">606</span>
+<span id="607">607</span>
+<span id="608">608</span>
+<span id="609">609</span>
+<span id="610">610</span>
+<span id="611">611</span>
+<span id="612">612</span>
+<span id="613">613</span>
+<span id="614">614</span>
+<span id="615">615</span>
+<span id="616">616</span>
+<span id="617">617</span>
+<span id="618">618</span>
+<span id="619">619</span>
+<span id="620">620</span>
+<span id="621">621</span>
+<span id="622">622</span>
+<span id="623">623</span>
+<span id="624">624</span>
+<span id="625">625</span>
+<span id="626">626</span>
+<span id="627">627</span>
+<span id="628">628</span>
+<span id="629">629</span>
+<span id="630">630</span>
+<span id="631">631</span>
+<span id="632">632</span>
+<span id="633">633</span>
+<span id="634">634</span>
+<span id="635">635</span>
+<span id="636">636</span>
+<span id="637">637</span>
+<span id="638">638</span>
+<span id="639">639</span>
+<span id="640">640</span>
+<span id="641">641</span>
+<span id="642">642</span>
+<span id="643">643</span>
+<span id="644">644</span>
+<span id="645">645</span>
+<span id="646">646</span>
+<span id="647">647</span>
+<span id="648">648</span>
+<span id="649">649</span>
+<span id="650">650</span>
+<span id="651">651</span>
+<span id="652">652</span>
+<span id="653">653</span>
+<span id="654">654</span>
+<span id="655">655</span>
+<span id="656">656</span>
+<span id="657">657</span>
+<span id="658">658</span>
+<span id="659">659</span>
+<span id="660">660</span>
+<span id="661">661</span>
+<span id="662">662</span>
+<span id="663">663</span>
+<span id="664">664</span>
+<span id="665">665</span>
+<span id="666">666</span>
+<span id="667">667</span>
+<span id="668">668</span>
+<span id="669">669</span>
+<span id="670">670</span>
+<span id="671">671</span>
+<span id="672">672</span>
+<span id="673">673</span>
+<span id="674">674</span>
+<span id="675">675</span>
+<span id="676">676</span>
+<span id="677">677</span>
+<span id="678">678</span>
+<span id="679">679</span>
+<span id="680">680</span>
+<span id="681">681</span>
+<span id="682">682</span>
+<span id="683">683</span>
+<span id="684">684</span>
+<span id="685">685</span>
+<span id="686">686</span>
+<span id="687">687</span>
+<span id="688">688</span>
+<span id="689">689</span>
+<span id="690">690</span>
+<span id="691">691</span>
+<span id="692">692</span>
+<span id="693">693</span>
+<span id="694">694</span>
+<span id="695">695</span>
+<span id="696">696</span>
+<span id="697">697</span>
+<span id="698">698</span>
+<span id="699">699</span>
+<span id="700">700</span>
+<span id="701">701</span>
+<span id="702">702</span>
+<span id="703">703</span>
+<span id="704">704</span>
+<span id="705">705</span>
+<span id="706">706</span>
+<span id="707">707</span>
+<span id="708">708</span>
+<span id="709">709</span>
+<span id="710">710</span>
+<span id="711">711</span>
+<span id="712">712</span>
+<span id="713">713</span>
+<span id="714">714</span>
+<span id="715">715</span>
+<span id="716">716</span>
+<span id="717">717</span>
+<span id="718">718</span>
+<span id="719">719</span>
+<span id="720">720</span>
+<span id="721">721</span>
+<span id="722">722</span>
+<span id="723">723</span>
+<span id="724">724</span>
+<span id="725">725</span>
+<span id="726">726</span>
+<span id="727">727</span>
+<span id="728">728</span>
+<span id="729">729</span>
+<span id="730">730</span>
+<span id="731">731</span>
+<span id="732">732</span>
+<span id="733">733</span>
+<span id="734">734</span>
+<span id="735">735</span>
+<span id="736">736</span>
+<span id="737">737</span>
+<span id="738">738</span>
+<span id="739">739</span>
+<span id="740">740</span>
+<span id="741">741</span>
+<span id="742">742</span>
+<span id="743">743</span>
+<span id="744">744</span>
+<span id="745">745</span>
+<span id="746">746</span>
+<span id="747">747</span>
+<span id="748">748</span>
+<span id="749">749</span>
+<span id="750">750</span>
+<span id="751">751</span>
+<span id="752">752</span>
+<span id="753">753</span>
+<span id="754">754</span>
+<span id="755">755</span>
+<span id="756">756</span>
+<span id="757">757</span>
+<span id="758">758</span>
+<span id="759">759</span>
+<span id="760">760</span>
+<span id="761">761</span>
+<span id="762">762</span>
+<span id="763">763</span>
+<span id="764">764</span>
+<span id="765">765</span>
+<span id="766">766</span>
+<span id="767">767</span>
+<span id="768">768</span>
+<span id="769">769</span>
+<span id="770">770</span>
+<span id="771">771</span>
+<span id="772">772</span>
+<span id="773">773</span>
+<span id="774">774</span>
+<span id="775">775</span>
+<span id="776">776</span>
+<span id="777">777</span>
+<span id="778">778</span>
+<span id="779">779</span>
+<span id="780">780</span>
+<span id="781">781</span>
+<span id="782">782</span>
+<span id="783">783</span>
+<span id="784">784</span>
+<span id="785">785</span>
+<span id="786">786</span>
+<span id="787">787</span>
+<span id="788">788</span>
+<span id="789">789</span>
+<span id="790">790</span>
+<span id="791">791</span>
+<span id="792">792</span>
+<span id="793">793</span>
+<span id="794">794</span>
+<span id="795">795</span>
+<span id="796">796</span>
+<span id="797">797</span>
+<span id="798">798</span>
+<span id="799">799</span>
+<span id="800">800</span>
+<span id="801">801</span>
+<span id="802">802</span>
+<span id="803">803</span>
+<span id="804">804</span>
+<span id="805">805</span>
+<span id="806">806</span>
+<span id="807">807</span>
+<span id="808">808</span>
+<span id="809">809</span>
+<span id="810">810</span>
+<span id="811">811</span>
+<span id="812">812</span>
+<span id="813">813</span>
+<span id="814">814</span>
+<span id="815">815</span>
+<span id="816">816</span>
+<span id="817">817</span>
+<span id="818">818</span>
+<span id="819">819</span>
+<span id="820">820</span>
+<span id="821">821</span>
+<span id="822">822</span>
+<span id="823">823</span>
+<span id="824">824</span>
+<span id="825">825</span>
+<span id="826">826</span>
+<span id="827">827</span>
+<span id="828">828</span>
+<span id="829">829</span>
+<span id="830">830</span>
+<span id="831">831</span>
+<span id="832">832</span>
+<span id="833">833</span>
+<span id="834">834</span>
+<span id="835">835</span>
+<span id="836">836</span>
+<span id="837">837</span>
+<span id="838">838</span>
+<span id="839">839</span>
+<span id="840">840</span>
+<span id="841">841</span>
+<span id="842">842</span>
+<span id="843">843</span>
+<span id="844">844</span>
+<span id="845">845</span>
+<span id="846">846</span>
+<span id="847">847</span>
+<span id="848">848</span>
+<span id="849">849</span>
+<span id="850">850</span>
+<span id="851">851</span>
+<span id="852">852</span>
+<span id="853">853</span>
+<span id="854">854</span>
+<span id="855">855</span>
+<span id="856">856</span>
+<span id="857">857</span>
+<span id="858">858</span>
+<span id="859">859</span>
+<span id="860">860</span>
+<span id="861">861</span>
+<span id="862">862</span>
+<span id="863">863</span>
+<span id="864">864</span>
+<span id="865">865</span>
+<span id="866">866</span>
+<span id="867">867</span>
+<span id="868">868</span>
+<span id="869">869</span>
+<span id="870">870</span>
+<span id="871">871</span>
+<span id="872">872</span>
+<span id="873">873</span>
+<span id="874">874</span>
+<span id="875">875</span>
+<span id="876">876</span>
+<span id="877">877</span>
+<span id="878">878</span>
+<span id="879">879</span>
+<span id="880">880</span>
+<span id="881">881</span>
+<span id="882">882</span>
+<span id="883">883</span>
+<span id="884">884</span>
+<span id="885">885</span>
+<span id="886">886</span>
+<span id="887">887</span>
+<span id="888">888</span>
+<span id="889">889</span>
+<span id="890">890</span>
+<span id="891">891</span>
+<span id="892">892</span>
+<span id="893">893</span>
+<span id="894">894</span>
+<span id="895">895</span>
+<span id="896">896</span>
+<span id="897">897</span>
+<span id="898">898</span>
+<span id="899">899</span>
+<span id="900">900</span>
+</pre><div class="example-wrap"><pre class="rust ">
+<span class="comment">// Copyright 2015-2016 Benjamin Fry &lt;benjaminfry@me.com&gt;</span>
+<span class="comment">//</span>
+<span class="comment">// Licensed under the Apache License, Version 2.0, &lt;LICENSE-APACHE or</span>
+<span class="comment">// http://apache.org/licenses/LICENSE-2.0&gt; or the MIT license &lt;LICENSE-MIT or</span>
+<span class="comment">// http://opensource.org/licenses/MIT&gt;, at your option. This file may not be</span>
+<span class="comment">// copied, modified, or distributed except according to those terms.</span>
+
+<span class="doccomment">//! The `SecureDnsHandle` is used to validate all DNS responses for correct DNSSec signatures.</span>
+
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">clone</span>::<span class="ident">Clone</span>;
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">collections</span>::<span class="ident">HashSet</span>;
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">mem</span>;
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">sync</span>::<span class="ident">Arc</span>;
+
+<span class="kw">use</span> <span class="ident">futures</span>::<span class="kw-2">*</span>;
+
+<span class="kw">use</span> <span class="ident">error</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident">op</span>::{<span class="ident">OpCode</span>, <span class="ident">Query</span>};
+<span class="kw">use</span> <span class="ident">rr</span>::<span class="ident">dnssec</span>::<span class="ident">rdata</span>::{<span class="ident">DNSSECRData</span>, <span class="ident">DNSSECRecordType</span>, <span class="ident">DNSKEY</span>, <span class="ident">SIG</span>};
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;dnssec&quot;</span>)]</span>
+<span class="kw">use</span> <span class="ident">rr</span>::<span class="ident">dnssec</span>::<span class="ident">Verifier</span>;
+<span class="kw">use</span> <span class="ident">rr</span>::<span class="ident">dnssec</span>::{<span class="ident">Algorithm</span>, <span class="ident">SupportedAlgorithms</span>, <span class="ident">TrustAnchor</span>};
+<span class="kw">use</span> <span class="ident">rr</span>::<span class="ident">rdata</span>::<span class="ident">opt</span>::<span class="ident">EdnsOption</span>;
+<span class="kw">use</span> <span class="ident">rr</span>::{<span class="ident">DNSClass</span>, <span class="ident">Name</span>, <span class="ident">RData</span>, <span class="ident">Record</span>, <span class="ident">RecordType</span>};
+<span class="kw">use</span> <span class="ident">xfer</span>::{<span class="ident">DnsRequest</span>, <span class="ident">DnsRequestOptions</span>, <span class="ident">DnsResponse</span>};
+<span class="kw">use</span> <span class="ident">DnsHandle</span>;
+
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
+<span class="kw">struct</span> <span class="ident">Rrset</span> {
+    <span class="kw">pub</span> <span class="ident">name</span>: <span class="ident">Name</span>,
+    <span class="kw">pub</span> <span class="ident">record_type</span>: <span class="ident">RecordType</span>,
+    <span class="kw">pub</span> <span class="ident">record_class</span>: <span class="ident">DNSClass</span>,
+    <span class="kw">pub</span> <span class="ident">records</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Record</span><span class="op">&gt;</span>,
+}
+
+<span class="doccomment">/// Performs DNSSec validation of all DNS responses from the wrapped DnsHandle</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// This wraps a DnsHandle, changing the implementation `send()` to validate all</span>
+<span class="doccomment">///  message responses for Query operations. Update operation responses are not validated by</span>
+<span class="doccomment">///  this process.</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>)]</span>
+<span class="attribute">#[<span class="ident">must_use</span> <span class="op">=</span> <span class="string">&quot;queries can only be sent through a DnsHandle&quot;</span>]</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SecureDnsHandle</span><span class="op">&lt;</span><span class="ident">H</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+    <span class="ident">H</span>: <span class="ident">DnsHandle</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+{
+    <span class="ident">handle</span>: <span class="ident">H</span>,
+    <span class="ident">trust_anchor</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">TrustAnchor</span><span class="op">&gt;</span>,
+    <span class="ident">request_depth</span>: <span class="ident">usize</span>,
+    <span class="ident">minimum_key_len</span>: <span class="ident">usize</span>,
+    <span class="ident">minimum_algorithm</span>: <span class="ident">Algorithm</span>, <span class="comment">// used to prevent down grade attacks...</span>
+}
+
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">H</span><span class="op">&gt;</span> <span class="ident">SecureDnsHandle</span><span class="op">&lt;</span><span class="ident">H</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+    <span class="ident">H</span>: <span class="ident">DnsHandle</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+{
+    <span class="doccomment">/// Create a new SecureDnsHandle wrapping the speicified handle.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// This uses the compiled in TrustAnchor default trusted keys.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// # Arguments</span>
+    <span class="doccomment">/// * `handle` - handle to use for all connections to a remote server.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">handle</span>: <span class="ident">H</span>) <span class="op">-&gt;</span> <span class="ident">SecureDnsHandle</span><span class="op">&lt;</span><span class="ident">H</span><span class="op">&gt;</span> {
+        <span class="self">Self</span>::<span class="ident">with_trust_anchor</span>(<span class="ident">handle</span>, <span class="ident">TrustAnchor</span>::<span class="ident">default</span>())
+    }
+
+    <span class="doccomment">/// Create a new SecureDnsHandle wrapping the speicified handle.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// This allows a custom TrustAnchor to be define.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// # Arguments</span>
+    <span class="doccomment">/// * `handle` - handle to use for all connections to a remote server.</span>
+    <span class="doccomment">/// * `trust_anchor` - custom DNSKEYs that will be trusted, can be used to pin trusted keys.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">with_trust_anchor</span>(<span class="ident">handle</span>: <span class="ident">H</span>, <span class="ident">trust_anchor</span>: <span class="ident">TrustAnchor</span>) <span class="op">-&gt;</span> <span class="ident">SecureDnsHandle</span><span class="op">&lt;</span><span class="ident">H</span><span class="op">&gt;</span> {
+        <span class="ident">SecureDnsHandle</span> {
+            <span class="ident">handle</span>,
+            <span class="ident">trust_anchor</span>: <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">trust_anchor</span>),
+            <span class="ident">request_depth</span>: <span class="number">0</span>,
+            <span class="ident">minimum_key_len</span>: <span class="number">0</span>,
+            <span class="ident">minimum_algorithm</span>: <span class="ident">Algorithm</span>::<span class="ident">RSASHA256</span>,
+        }
+    }
+
+    <span class="doccomment">/// An internal function used to clone the handle, but maintain some information back to the</span>
+    <span class="doccomment">///  original handle, such as the request_depth such that infinite recurssion does</span>
+    <span class="doccomment">///  not occur.</span>
+    <span class="kw">fn</span> <span class="ident">clone_with_context</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
+        <span class="ident">SecureDnsHandle</span> {
+            <span class="ident">handle</span>: <span class="self">self</span>.<span class="ident">handle</span>.<span class="ident">clone</span>(),
+            <span class="ident">trust_anchor</span>: <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">trust_anchor</span>),
+            <span class="ident">request_depth</span>: <span class="self">self</span>.<span class="ident">request_depth</span> <span class="op">+</span> <span class="number">1</span>,
+            <span class="ident">minimum_key_len</span>: <span class="self">self</span>.<span class="ident">minimum_key_len</span>,
+            <span class="ident">minimum_algorithm</span>: <span class="self">self</span>.<span class="ident">minimum_algorithm</span>,
+        }
+    }
+}
+
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">H</span>: <span class="ident">DnsHandle</span><span class="op">&gt;</span> <span class="ident">DnsHandle</span> <span class="kw">for</span> <span class="ident">SecureDnsHandle</span><span class="op">&lt;</span><span class="ident">H</span><span class="op">&gt;</span> {
+    <span class="kw">type</span> <span class="ident">Response</span> <span class="op">=</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">DnsResponse</span>, <span class="ident">Error</span> <span class="op">=</span> <span class="ident">ProtoError</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span><span class="op">&gt;</span>;
+
+    <span class="kw">fn</span> <span class="ident">is_verifying_dnssec</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
+        <span class="comment">// This handler is always verifying...</span>
+        <span class="bool-val">true</span>
+    }
+
+    <span class="kw">fn</span> <span class="ident">send</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">DnsRequest</span><span class="op">&gt;&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">request</span>: <span class="ident">R</span>) <span class="op">-&gt;</span> <span class="self">Self</span>::<span class="ident">Response</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">request</span> <span class="op">=</span> <span class="ident">request</span>.<span class="ident">into</span>();
+
+        <span class="comment">// backstop, this might need to be configurable at some point</span>
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">request_depth</span> <span class="op">&gt;</span> <span class="number">20</span> {
+            <span class="kw">return</span> <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">failed</span>(<span class="ident">ProtoError</span>::<span class="ident">from</span>(<span class="string">&quot;exceeded max validation depth&quot;</span>)));
+        }
+
+        <span class="comment">// dnssec only matters on queries.</span>
+        <span class="kw">if</span> <span class="kw">let</span> <span class="ident">OpCode</span>::<span class="ident">Query</span> <span class="op">=</span> <span class="ident">request</span>.<span class="ident">op_code</span>() {
+            <span class="comment">// This will panic on no queries, that is a very odd type of request, isn&#39;t it?</span>
+            <span class="comment">// TODO: with mDNS there can be multiple queries</span>
+            <span class="kw">let</span> <span class="ident">query</span> <span class="op">=</span> <span class="ident">request</span>
+                .<span class="ident">queries</span>()
+                .<span class="ident">first</span>()
+                .<span class="ident">cloned</span>()
+                .<span class="ident">expect</span>(<span class="string">&quot;no queries in request&quot;</span>);
+            <span class="kw">let</span> <span class="ident">handle</span>: <span class="ident">SecureDnsHandle</span><span class="op">&lt;</span><span class="ident">H</span><span class="op">&gt;</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">clone_with_context</span>();
+
+            <span class="comment">// TODO: cache response of the server about understood algorithms</span>
+            <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;dnssec&quot;</span>)]</span>
+            {
+                <span class="kw">let</span> <span class="ident">edns</span> <span class="op">=</span> <span class="ident">request</span>.<span class="ident">edns_mut</span>();
+
+                <span class="ident">edns</span>.<span class="ident">set_dnssec_ok</span>(<span class="bool-val">true</span>);
+
+                <span class="comment">// send along the algorithms which are supported by this handle</span>
+                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">algorithms</span> <span class="op">=</span> <span class="ident">SupportedAlgorithms</span>::<span class="ident">new</span>();
+                <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;ring&quot;</span>)]</span>
+                {
+                    <span class="ident">algorithms</span>.<span class="ident">set</span>(<span class="ident">Algorithm</span>::<span class="ident">ED25519</span>);
+                }
+                <span class="ident">algorithms</span>.<span class="ident">set</span>(<span class="ident">Algorithm</span>::<span class="ident">ECDSAP256SHA256</span>);
+                <span class="ident">algorithms</span>.<span class="ident">set</span>(<span class="ident">Algorithm</span>::<span class="ident">ECDSAP384SHA384</span>);
+                <span class="ident">algorithms</span>.<span class="ident">set</span>(<span class="ident">Algorithm</span>::<span class="ident">RSASHA256</span>);
+
+                <span class="kw">let</span> <span class="ident">dau</span> <span class="op">=</span> <span class="ident">EdnsOption</span>::<span class="ident">DAU</span>(<span class="ident">algorithms</span>);
+                <span class="kw">let</span> <span class="ident">dhu</span> <span class="op">=</span> <span class="ident">EdnsOption</span>::<span class="ident">DHU</span>(<span class="ident">algorithms</span>);
+
+                <span class="ident">edns</span>.<span class="ident">set_option</span>(<span class="ident">dau</span>);
+                <span class="ident">edns</span>.<span class="ident">set_option</span>(<span class="ident">dhu</span>);
+            }
+
+            <span class="ident">request</span>.<span class="ident">set_authentic_data</span>(<span class="bool-val">true</span>);
+            <span class="ident">request</span>.<span class="ident">set_checking_disabled</span>(<span class="bool-val">false</span>);
+            <span class="kw">let</span> <span class="ident">dns_class</span> <span class="op">=</span> <span class="ident">request</span>
+                .<span class="ident">queries</span>()
+                .<span class="ident">first</span>()
+                .<span class="ident">map_or</span>(<span class="ident">DNSClass</span>::<span class="ident">IN</span>, <span class="ident">Query</span>::<span class="ident">query_class</span>);
+
+            <span class="kw">return</span> <span class="ident">Box</span>::<span class="ident">new</span>(
+                <span class="self">self</span>.<span class="ident">handle</span>
+                    .<span class="ident">send</span>(<span class="ident">request</span>)
+                    .<span class="ident">and_then</span>(<span class="kw">move</span> <span class="op">|</span><span class="ident">message_response</span><span class="op">|</span> {
+                        <span class="comment">// group the record sets by name and type</span>
+                        <span class="comment">//  each rrset type needs to validated independently</span>
+                        <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;validating message_response: {}&quot;</span>, <span class="ident">message_response</span>.<span class="ident">id</span>());
+                        <span class="ident">verify_rrsets</span>(<span class="kw-2">&amp;</span><span class="ident">handle</span>, <span class="ident">message_response</span>, <span class="ident">dns_class</span>)
+                    })
+                    .<span class="ident">and_then</span>(<span class="kw">move</span> <span class="op">|</span><span class="ident">verified_message</span><span class="op">|</span> {
+                        <span class="comment">// at this point all of the message is verified.</span>
+                        <span class="comment">//  This is where NSEC (and possibly NSEC3) validation occurs</span>
+                        <span class="comment">// As of now, only NSEC is supported.</span>
+                        <span class="kw">if</span> <span class="ident">verified_message</span>.<span class="ident">answers</span>().<span class="ident">is_empty</span>() {
+                            <span class="comment">// get SOA name</span>
+                            <span class="kw">let</span> <span class="ident">soa_name</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">soa_name</span>) <span class="op">=</span> <span class="ident">verified_message</span>
+                                .<span class="ident">name_servers</span>()
+                                .<span class="ident">iter</span>()
+                                <span class="comment">// there should only be one</span>
+                                .<span class="ident">find</span>(<span class="op">|</span><span class="ident">rr</span><span class="op">|</span> <span class="ident">rr</span>.<span class="ident">record_type</span>() <span class="op">==</span> <span class="ident">RecordType</span>::<span class="ident">SOA</span>)
+                                .<span class="ident">map</span>(<span class="ident">Record</span>::<span class="ident">name</span>)
+                            {
+                                <span class="ident">soa_name</span>
+                            } <span class="kw">else</span> {
+                                <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ProtoError</span>::<span class="ident">from</span>(
+                                    <span class="string">&quot;could not validate negative response missing SOA&quot;</span>,
+                                ));
+                            };
+
+                            <span class="kw">let</span> <span class="ident">nsecs</span> <span class="op">=</span> <span class="ident">verified_message</span>
+                                .<span class="ident">name_servers</span>()
+                                .<span class="ident">iter</span>()
+                                .<span class="ident">filter</span>(<span class="op">|</span><span class="ident">rr</span><span class="op">|</span> <span class="ident">is_dnssec</span>(<span class="ident">rr</span>, <span class="ident">DNSSECRecordType</span>::<span class="ident">NSEC</span>))
+                                .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;&gt;</span>();
+
+                            <span class="kw">if</span> <span class="op">!</span><span class="ident">verify_nsec</span>(<span class="kw-2">&amp;</span><span class="ident">query</span>, <span class="ident">soa_name</span>, <span class="ident">nsecs</span>.<span class="ident">as_slice</span>()) {
+                                <span class="comment">// TODO change this to remove the NSECs, like we do for the others?</span>
+                                <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ProtoError</span>::<span class="ident">from</span>(
+                                    <span class="string">&quot;could not validate negative response with NSEC&quot;</span>,
+                                ));
+                            }
+                        }
+
+                        <span class="prelude-val">Ok</span>(<span class="ident">verified_message</span>)
+                    }),
+            );
+        }
+
+        <span class="ident">Box</span>::<span class="ident">new</span>(<span class="self">self</span>.<span class="ident">handle</span>.<span class="ident">send</span>(<span class="ident">request</span>))
+    }
+}
+
+<span class="doccomment">/// A future to verify all RRSets in a returned Message.</span>
+<span class="kw">struct</span> <span class="ident">VerifyRrsetsFuture</span> {
+    <span class="ident">message_result</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">DnsResponse</span><span class="op">&gt;</span>,
+    <span class="ident">rrsets</span>: <span class="ident">SelectAll</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">Rrset</span>, <span class="ident">Error</span> <span class="op">=</span> <span class="ident">ProtoError</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span><span class="op">&gt;&gt;</span>,
+    <span class="ident">verified_rrsets</span>: <span class="ident">HashSet</span><span class="op">&lt;</span>(<span class="ident">Name</span>, <span class="ident">RecordType</span>)<span class="op">&gt;</span>,
+}
+
+<span class="doccomment">/// this pulls all records returned in a Message respons and returns a future which will</span>
+<span class="doccomment">///  validate all of them.</span>
+<span class="kw">fn</span> <span class="ident">verify_rrsets</span><span class="op">&lt;</span><span class="ident">H</span>: <span class="ident">DnsHandle</span><span class="op">&gt;</span>(
+    <span class="ident">handle</span>: <span class="kw-2">&amp;</span><span class="ident">SecureDnsHandle</span><span class="op">&lt;</span><span class="ident">H</span><span class="op">&gt;</span>,
+    <span class="ident">message_result</span>: <span class="ident">DnsResponse</span>,
+    <span class="ident">dns_class</span>: <span class="ident">DNSClass</span>,
+) <span class="op">-&gt;</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">DnsResponse</span>, <span class="ident">Error</span> <span class="op">=</span> <span class="ident">ProtoError</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span><span class="op">&gt;</span> {
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rrset_types</span>: <span class="ident">HashSet</span><span class="op">&lt;</span>(<span class="ident">Name</span>, <span class="ident">RecordType</span>)<span class="op">&gt;</span> <span class="op">=</span> <span class="ident">HashSet</span>::<span class="ident">new</span>();
+    <span class="kw">for</span> <span class="ident">rrset</span> <span class="kw">in</span> <span class="ident">message_result</span>
+        .<span class="ident">answers</span>()
+        .<span class="ident">iter</span>()
+        .<span class="ident">chain</span>(<span class="ident">message_result</span>.<span class="ident">name_servers</span>())
+        .<span class="ident">filter</span>(<span class="op">|</span><span class="ident">rr</span><span class="op">|</span> {
+            <span class="op">!</span><span class="ident">is_dnssec</span>(<span class="ident">rr</span>, <span class="ident">DNSSECRecordType</span>::<span class="ident">RRSIG</span>) <span class="op">&amp;&amp;</span>
+                             <span class="comment">// if we are at a depth greater than 1, we are only interested in proving evaluation chains</span>
+                             <span class="comment">//   this means that only DNSKEY and DS are intersting at that point.</span>
+                             <span class="comment">//   this protects against looping over things like NS records and DNSKEYs in responses.</span>
+                             <span class="comment">// TODO: is there a cleaner way to prevent cycles in the evaluations?</span>
+                                          (<span class="ident">handle</span>.<span class="ident">request_depth</span> <span class="op">&lt;=</span> <span class="number">1</span> <span class="op">||</span>
+                                           <span class="ident">is_dnssec</span>(<span class="ident">rr</span>, <span class="ident">DNSSECRecordType</span>::<span class="ident">DNSKEY</span>) <span class="op">||</span>
+                                           <span class="ident">is_dnssec</span>(<span class="ident">rr</span>, <span class="ident">DNSSECRecordType</span>::<span class="ident">DS</span>))
+        })
+        .<span class="ident">map</span>(<span class="op">|</span><span class="ident">rr</span><span class="op">|</span> (<span class="ident">rr</span>.<span class="ident">name</span>().<span class="ident">clone</span>(), <span class="ident">rr</span>.<span class="ident">rr_type</span>()))
+    {
+        <span class="ident">rrset_types</span>.<span class="ident">insert</span>(<span class="ident">rrset</span>);
+    }
+
+    <span class="comment">// there was no data returned in that message</span>
+    <span class="kw">if</span> <span class="ident">rrset_types</span>.<span class="ident">is_empty</span>() {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">message_result</span> <span class="op">=</span> <span class="ident">message_result</span>;
+
+        <span class="comment">// there were no returned results, double check by dropping all the results</span>
+        <span class="ident">message_result</span>.<span class="ident">take_answers</span>();
+        <span class="ident">message_result</span>.<span class="ident">take_name_servers</span>();
+        <span class="ident">message_result</span>.<span class="ident">take_additionals</span>();
+
+        <span class="kw">return</span> <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">failed</span>(<span class="ident">ProtoError</span>::<span class="ident">from</span>(<span class="ident">ProtoErrorKind</span>::<span class="ident">Message</span>(
+            <span class="string">&quot;no results to verify&quot;</span>,
+        ))));
+    }
+
+    <span class="comment">// collect all the rrsets to verify</span>
+    <span class="comment">// TODO: is there a way to get rid of this clone() safely?</span>
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rrsets</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">Rrset</span>, <span class="ident">Error</span> <span class="op">=</span> <span class="ident">ProtoError</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span><span class="op">&gt;&gt;</span> <span class="op">=</span>
+        <span class="ident">Vec</span>::<span class="ident">with_capacity</span>(<span class="ident">rrset_types</span>.<span class="ident">len</span>());
+    <span class="kw">for</span> (<span class="ident">name</span>, <span class="ident">record_type</span>) <span class="kw">in</span> <span class="ident">rrset_types</span> {
+        <span class="comment">// TODO: should we evaluate the different sections (answers and name_servers) separately?</span>
+        <span class="kw">let</span> <span class="ident">records</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Record</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">message_result</span>
+            .<span class="ident">answers</span>()
+            .<span class="ident">iter</span>()
+            .<span class="ident">chain</span>(<span class="ident">message_result</span>.<span class="ident">name_servers</span>())
+            .<span class="ident">chain</span>(<span class="ident">message_result</span>.<span class="ident">additionals</span>())
+            .<span class="ident">filter</span>(<span class="op">|</span><span class="ident">rr</span><span class="op">|</span> <span class="ident">rr</span>.<span class="ident">rr_type</span>() <span class="op">==</span> <span class="ident">record_type</span> <span class="op">&amp;&amp;</span> <span class="ident">rr</span>.<span class="ident">name</span>() <span class="op">==</span> <span class="kw-2">&amp;</span><span class="ident">name</span>)
+            .<span class="ident">cloned</span>()
+            .<span class="ident">collect</span>();
+
+        <span class="kw">let</span> <span class="ident">rrsigs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Record</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">message_result</span>
+            .<span class="ident">answers</span>()
+            .<span class="ident">iter</span>()
+            .<span class="ident">chain</span>(<span class="ident">message_result</span>.<span class="ident">name_servers</span>())
+            .<span class="ident">chain</span>(<span class="ident">message_result</span>.<span class="ident">additionals</span>())
+            .<span class="ident">filter</span>(<span class="op">|</span><span class="ident">rr</span><span class="op">|</span> <span class="ident">is_dnssec</span>(<span class="ident">rr</span>, <span class="ident">DNSSECRecordType</span>::<span class="ident">RRSIG</span>))
+            .<span class="ident">filter</span>(<span class="op">|</span><span class="ident">rr</span><span class="op">|</span> {
+                <span class="kw">if</span> <span class="kw">let</span> <span class="ident">RData</span>::<span class="ident">DNSSEC</span>(<span class="ident">DNSSECRData</span>::<span class="ident">SIG</span>(<span class="kw-2">ref</span> <span class="ident">rrsig</span>)) <span class="op">=</span> <span class="kw-2">*</span><span class="ident">rr</span>.<span class="ident">rdata</span>() {
+                    <span class="ident">rrsig</span>.<span class="ident">type_covered</span>() <span class="op">==</span> <span class="ident">record_type</span>
+                } <span class="kw">else</span> {
+                    <span class="bool-val">false</span>
+                }
+            })
+            .<span class="ident">cloned</span>()
+            .<span class="ident">collect</span>();
+
+        <span class="comment">// if there is already an active validation going on, assume the other validation will</span>
+        <span class="comment">//  complete properly or error if it is invalid</span>
+        <span class="kw">let</span> <span class="ident">rrset</span> <span class="op">=</span> <span class="ident">Rrset</span> {
+            <span class="ident">name</span>,
+            <span class="ident">record_type</span>,
+            <span class="ident">record_class</span>: <span class="ident">dns_class</span>,
+            <span class="ident">records</span>,
+        };
+
+        <span class="comment">// TODO: support non-IN classes?</span>
+        <span class="macro">debug</span><span class="macro">!</span>(
+            <span class="string">&quot;verifying: {}, record_type: {:?}, rrsigs: {}&quot;</span>,
+            <span class="ident">rrset</span>.<span class="ident">name</span>,
+            <span class="ident">record_type</span>,
+            <span class="ident">rrsigs</span>.<span class="ident">len</span>()
+        );
+        <span class="ident">rrsets</span>.<span class="ident">push</span>(<span class="ident">verify_rrset</span>(<span class="ident">handle</span>.<span class="ident">clone_with_context</span>(), <span class="ident">rrset</span>, <span class="ident">rrsigs</span>));
+    }
+
+    <span class="comment">// spawn a select_all over this vec, these are the individual RRSet validators</span>
+    <span class="kw">let</span> <span class="ident">rrsets_to_verify</span> <span class="op">=</span> <span class="ident">select_all</span>(<span class="ident">rrsets</span>);
+
+    <span class="comment">// return the full Message validator</span>
+    <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">VerifyRrsetsFuture</span> {
+        <span class="ident">message_result</span>: <span class="prelude-val">Some</span>(<span class="ident">message_result</span>),
+        <span class="ident">rrsets</span>: <span class="ident">rrsets_to_verify</span>,
+        <span class="ident">verified_rrsets</span>: <span class="ident">HashSet</span>::<span class="ident">new</span>(),
+    })
+}
+
+<span class="kw">fn</span> <span class="ident">is_dnssec</span>(<span class="ident">rr</span>: <span class="kw-2">&amp;</span><span class="ident">Record</span>, <span class="ident">dnssec_type</span>: <span class="ident">DNSSECRecordType</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
+    <span class="ident">rr</span>.<span class="ident">rr_type</span>() <span class="op">==</span> <span class="ident">RecordType</span>::<span class="ident">DNSSEC</span>(<span class="ident">dnssec_type</span>)
+}
+
+<span class="kw">impl</span> <span class="ident">Future</span> <span class="kw">for</span> <span class="ident">VerifyRrsetsFuture</span> {
+    <span class="kw">type</span> <span class="ident">Item</span> <span class="op">=</span> <span class="ident">DnsResponse</span>;
+    <span class="kw">type</span> <span class="ident">Error</span> <span class="op">=</span> <span class="ident">ProtoError</span>;
+
+    <span class="kw">fn</span> <span class="ident">poll</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">Poll</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">Item</span>, <span class="self">Self</span>::<span class="ident">Error</span><span class="op">&gt;</span> {
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">message_result</span>.<span class="ident">is_none</span>() {
+            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ProtoError</span>::<span class="ident">from</span>(<span class="ident">ProtoErrorKind</span>::<span class="ident">Message</span>(<span class="string">&quot;message is none&quot;</span>)));
+        }
+
+        <span class="comment">// loop through all the rrset evaluations, filter all the rrsets in the Message</span>
+        <span class="comment">//  down to just the ones that were able to be validated</span>
+        <span class="kw">loop</span> {
+            <span class="kw">let</span> <span class="ident">remaining</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">rrsets</span>.<span class="ident">poll</span>() {
+                <span class="comment">// one way the loop will stop, nothing is ready...</span>
+                <span class="prelude-val">Ok</span>(<span class="ident">Async</span>::<span class="ident">NotReady</span>) <span class="op">=&gt;</span> <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">Async</span>::<span class="ident">NotReady</span>),
+                <span class="comment">// all rrsets verified! woop!</span>
+                <span class="prelude-val">Ok</span>(<span class="ident">Async</span>::<span class="ident">Ready</span>((<span class="ident">rrset</span>, <span class="kw">_</span>, <span class="ident">remaining</span>))) <span class="op">=&gt;</span> {
+                    <span class="macro">debug</span><span class="macro">!</span>(
+                        <span class="string">&quot;an rrset was verified: {}, {:?}&quot;</span>,
+                        <span class="ident">rrset</span>.<span class="ident">name</span>, <span class="ident">rrset</span>.<span class="ident">record_type</span>
+                    );
+                    <span class="self">self</span>.<span class="ident">verified_rrsets</span>.<span class="ident">insert</span>((<span class="ident">rrset</span>.<span class="ident">name</span>, <span class="ident">rrset</span>.<span class="ident">record_type</span>));
+                    <span class="ident">remaining</span>
+                }
+                <span class="comment">// TODO, should we return the Message on errors? Allow the consumer to decide what to do</span>
+                <span class="comment">//       on a validation failure?</span>
+                <span class="comment">// any error, is an error for all</span>
+                <span class="prelude-val">Err</span>((<span class="ident">e</span>, <span class="kw">_</span>, <span class="ident">remaining</span>)) <span class="op">=&gt;</span> {
+                    <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;an rrset failed to verify: {:?}&quot;</span>, <span class="ident">e</span>);
+                    <span class="kw">if</span> <span class="ident">remaining</span>.<span class="ident">is_empty</span>() {
+                        <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>);
+                    }
+                    <span class="ident">remaining</span>
+                }
+            };
+
+            <span class="kw">if</span> <span class="op">!</span><span class="ident">remaining</span>.<span class="ident">is_empty</span>() {
+                <span class="comment">// continue the evaluation</span>
+                <span class="ident">drop</span>(<span class="ident">mem</span>::<span class="ident">replace</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">rrsets</span>, <span class="ident">select_all</span>(<span class="ident">remaining</span>)));
+            } <span class="kw">else</span> {
+                <span class="comment">// validated not none above...</span>
+                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">message_result</span> <span class="op">=</span> <span class="ident">mem</span>::<span class="ident">replace</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">message_result</span>, <span class="prelude-val">None</span>).<span class="ident">unwrap</span>();
+
+                <span class="comment">// take all the rrsets from the Message, filter down each set to the validated rrsets</span>
+                <span class="comment">// TODO: does the section in the message matter here?</span>
+                <span class="comment">//       we could probably end up with record_types in any section.</span>
+                <span class="comment">//       track the section in the rrset evaluation?</span>
+                <span class="kw">let</span> <span class="ident">answers</span> <span class="op">=</span> <span class="ident">message_result</span>
+                    .<span class="ident">take_answers</span>()
+                    .<span class="ident">into_iter</span>()
+                    .<span class="ident">chain</span>(<span class="ident">message_result</span>.<span class="ident">take_additionals</span>().<span class="ident">into_iter</span>())
+                    .<span class="ident">filter</span>(<span class="op">|</span><span class="ident">record</span><span class="op">|</span> {
+                        <span class="self">self</span>.<span class="ident">verified_rrsets</span>
+                            .<span class="ident">contains</span>(<span class="kw-2">&amp;</span>(<span class="ident">record</span>.<span class="ident">name</span>().<span class="ident">clone</span>(), <span class="ident">record</span>.<span class="ident">rr_type</span>()))
+                    })
+                    .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Record</span><span class="op">&gt;&gt;</span>();
+
+                <span class="kw">let</span> <span class="ident">name_servers</span> <span class="op">=</span> <span class="ident">message_result</span>
+                    .<span class="ident">take_name_servers</span>()
+                    .<span class="ident">into_iter</span>()
+                    .<span class="ident">filter</span>(<span class="op">|</span><span class="ident">record</span><span class="op">|</span> {
+                        <span class="self">self</span>.<span class="ident">verified_rrsets</span>
+                            .<span class="ident">contains</span>(<span class="kw-2">&amp;</span>(<span class="ident">record</span>.<span class="ident">name</span>().<span class="ident">clone</span>(), <span class="ident">record</span>.<span class="ident">rr_type</span>()))
+                    })
+                    .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Record</span><span class="op">&gt;&gt;</span>();
+
+                <span class="kw">let</span> <span class="ident">additionals</span> <span class="op">=</span> <span class="ident">message_result</span>
+                    .<span class="ident">take_additionals</span>()
+                    .<span class="ident">into_iter</span>()
+                    .<span class="ident">filter</span>(<span class="op">|</span><span class="ident">record</span><span class="op">|</span> {
+                        <span class="self">self</span>.<span class="ident">verified_rrsets</span>
+                            .<span class="ident">contains</span>(<span class="kw-2">&amp;</span>(<span class="ident">record</span>.<span class="ident">name</span>().<span class="ident">clone</span>(), <span class="ident">record</span>.<span class="ident">rr_type</span>()))
+                    })
+                    .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Record</span><span class="op">&gt;&gt;</span>();
+
+                <span class="comment">// add the filtered records back to the message</span>
+                <span class="ident">message_result</span>.<span class="ident">insert_answers</span>(<span class="ident">answers</span>);
+                <span class="ident">message_result</span>.<span class="ident">insert_name_servers</span>(<span class="ident">name_servers</span>);
+                <span class="ident">message_result</span>.<span class="ident">insert_additionals</span>(<span class="ident">additionals</span>);
+
+                <span class="comment">// breaks out of the loop... and returns the filtered Message.</span>
+                <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">Async</span>::<span class="ident">Ready</span>(<span class="ident">message_result</span>));
+            }
+        }
+    }
+}
+
+<span class="doccomment">/// Generic entrypoint to verify any RRSET against the provided signatures.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// Generally, the RRSET will be validated by `verify_default_rrset()`. There are additional</span>
+<span class="doccomment">///  checks that happen after the RRSET is successfully validated. In the case of DNSKEYs this</span>
+<span class="doccomment">///  triggers `verify_dnskey_rrset()`. If it&#39;s an NSEC record, then the NSEC record will be</span>
+<span class="doccomment">///  validated to prove it&#39;s correctness. There is a special case for DNSKEY, where if the RRSET</span>
+<span class="doccomment">///  is unsigned, `rrsigs` is empty, then an immediate `verify_dnskey_rrset()` is triggered. In</span>
+<span class="doccomment">///  this case, it&#39;s possible the DNSKEY is a trust_anchor and is not self-signed.</span>
+<span class="kw">fn</span> <span class="ident">verify_rrset</span><span class="op">&lt;</span><span class="ident">H</span><span class="op">&gt;</span>(
+    <span class="ident">handle</span>: <span class="ident">SecureDnsHandle</span><span class="op">&lt;</span><span class="ident">H</span><span class="op">&gt;</span>,
+    <span class="ident">rrset</span>: <span class="ident">Rrset</span>,
+    <span class="ident">rrsigs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Record</span><span class="op">&gt;</span>,
+) <span class="op">-&gt;</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">Rrset</span>, <span class="ident">Error</span> <span class="op">=</span> <span class="ident">ProtoError</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+    <span class="ident">H</span>: <span class="ident">DnsHandle</span>,
+{
+    <span class="comment">// Special case for unsigned DNSKEYs, it&#39;s valid for a DNSKEY to be bare in the zone if</span>
+    <span class="comment">//  it&#39;s a trust_anchor, though some DNS servers choose to self-sign in this case,</span>
+    <span class="comment">//  for self-signed KEYS they will drop through to the standard validation logic.</span>
+    <span class="kw">if</span> <span class="kw">let</span> <span class="ident">RecordType</span>::<span class="ident">DNSSEC</span>(<span class="ident">DNSSECRecordType</span>::<span class="ident">DNSKEY</span>) <span class="op">=</span> <span class="ident">rrset</span>.<span class="ident">record_type</span> {
+        <span class="kw">if</span> <span class="ident">rrsigs</span>.<span class="ident">is_empty</span>() {
+            <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;unsigned key: {}, {:?}&quot;</span>, <span class="ident">rrset</span>.<span class="ident">name</span>, <span class="ident">rrset</span>.<span class="ident">record_type</span>);
+            <span class="comment">// FIXME: validate that this DNSKEY is stronger than the one lower in the chain,</span>
+            <span class="comment">//  also, set the min algorithm to this algorithm to prevent downgrade attacks.</span>
+            <span class="kw">return</span> <span class="ident">verify_dnskey_rrset</span>(<span class="ident">handle</span>.<span class="ident">clone_with_context</span>(), <span class="ident">rrset</span>);
+        }
+    }
+
+    <span class="comment">// standard validation path</span>
+    <span class="ident">Box</span>::<span class="ident">new</span>(
+        <span class="ident">verify_default_rrset</span>(<span class="kw-2">&amp;</span><span class="ident">handle</span>.<span class="ident">clone_with_context</span>(), <span class="ident">rrset</span>, <span class="ident">rrsigs</span>)
+            .<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">rrset</span><span class="op">|</span>
+          <span class="comment">// POST validation</span>
+          <span class="kw">match</span> <span class="ident">rrset</span>.<span class="ident">record_type</span> {
+            <span class="ident">RecordType</span>::<span class="ident">DNSSEC</span>(<span class="ident">DNSSECRecordType</span>::<span class="ident">DNSKEY</span>) <span class="op">=&gt;</span>
+                <span class="ident">verify_dnskey_rrset</span>(<span class="ident">handle</span>, <span class="ident">rrset</span>),
+            <span class="comment">// RecordType::DNSSEC(DNSSECRecordType::DS) =&gt; verify_ds_rrset(handle, name, record_type, record_class, rrset, rrsigs),</span>
+            <span class="kw">_</span> <span class="op">=&gt;</span> <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">finished</span>(<span class="ident">rrset</span>)),
+          })
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
+                <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;rrset failed validation: {}&quot;</span>, <span class="ident">e</span>);
+                <span class="ident">e</span>
+            }),
+    )
+}
+
+<span class="doccomment">/// Verifies a dnskey rrset</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// This first checks to see if the key is in the set of trust_anchors. If so then it&#39;s returned</span>
+<span class="doccomment">///  as a success. Otherwise, a query is sent to get the DS record, and the DNSKEY is validated</span>
+<span class="doccomment">///  against the DS record.</span>
+<span class="kw">fn</span> <span class="ident">verify_dnskey_rrset</span><span class="op">&lt;</span><span class="ident">H</span><span class="op">&gt;</span>(
+    <span class="kw-2">mut</span> <span class="ident">handle</span>: <span class="ident">SecureDnsHandle</span><span class="op">&lt;</span><span class="ident">H</span><span class="op">&gt;</span>,
+    <span class="ident">rrset</span>: <span class="ident">Rrset</span>,
+) <span class="op">-&gt;</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">Rrset</span>, <span class="ident">Error</span> <span class="op">=</span> <span class="ident">ProtoError</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+    <span class="ident">H</span>: <span class="ident">DnsHandle</span>,
+{
+    <span class="macro">debug</span><span class="macro">!</span>(
+        <span class="string">&quot;dnskey validation {}, record_type: {:?}&quot;</span>,
+        <span class="ident">rrset</span>.<span class="ident">name</span>, <span class="ident">rrset</span>.<span class="ident">record_type</span>
+    );
+
+    <span class="comment">// check the DNSKEYS against the trust_anchor, if it&#39;s approved allow it.</span>
+    {
+        <span class="kw">let</span> <span class="ident">anchored_keys</span> <span class="op">=</span> <span class="ident">rrset</span>
+            .<span class="ident">records</span>
+            .<span class="ident">iter</span>()
+            .<span class="ident">enumerate</span>()
+            .<span class="ident">filter</span>(<span class="op">|</span><span class="kw-2">&amp;</span>(<span class="kw">_</span>, <span class="ident">rr</span>)<span class="op">|</span> <span class="ident">is_dnssec</span>(<span class="ident">rr</span>, <span class="ident">DNSSECRecordType</span>::<span class="ident">DNSKEY</span>))
+            .<span class="ident">filter_map</span>(<span class="op">|</span>(<span class="ident">i</span>, <span class="ident">rr</span>)<span class="op">|</span> {
+                <span class="kw">if</span> <span class="kw">let</span> <span class="ident">RData</span>::<span class="ident">DNSSEC</span>(<span class="ident">DNSSECRData</span>::<span class="ident">DNSKEY</span>(<span class="kw-2">ref</span> <span class="ident">rdata</span>)) <span class="op">=</span> <span class="kw-2">*</span><span class="ident">rr</span>.<span class="ident">rdata</span>() {
+                    <span class="prelude-val">Some</span>((<span class="ident">i</span>, <span class="ident">rdata</span>))
+                } <span class="kw">else</span> {
+                    <span class="prelude-val">None</span>
+                }
+            })
+            .<span class="ident">filter_map</span>(<span class="op">|</span>(<span class="ident">i</span>, <span class="ident">rdata</span>)<span class="op">|</span> {
+                <span class="kw">if</span> <span class="ident">handle</span>
+                    .<span class="ident">trust_anchor</span>
+                    .<span class="ident">contains_dnskey_bytes</span>(<span class="ident">rdata</span>.<span class="ident">public_key</span>())
+                {
+                    <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;in trust_anchor&quot;</span>);
+                    <span class="prelude-val">Some</span>(<span class="ident">i</span>)
+                } <span class="kw">else</span> {
+                    <span class="prelude-val">None</span>
+                }
+            })
+            .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;&gt;</span>();
+
+        <span class="kw">if</span> <span class="op">!</span><span class="ident">anchored_keys</span>.<span class="ident">is_empty</span>() {
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rrset</span> <span class="op">=</span> <span class="ident">rrset</span>;
+            <span class="ident">preserve</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rrset</span>.<span class="ident">records</span>, <span class="ident">anchored_keys</span>);
+
+            <span class="macro">debug</span><span class="macro">!</span>(
+                <span class="string">&quot;validated dnskey with trust_anchor: {}, {}&quot;</span>,
+                <span class="ident">rrset</span>.<span class="ident">name</span>,
+                <span class="ident">rrset</span>.<span class="ident">records</span>.<span class="ident">len</span>()
+            );
+            <span class="kw">return</span> <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">finished</span>(<span class="ident">rrset</span>));
+        }
+    }
+
+    <span class="comment">// need to get DS records for each DNSKEY</span>
+    <span class="kw">let</span> <span class="ident">valid_dnskey</span> <span class="op">=</span> <span class="ident">handle</span>
+        .<span class="ident">lookup</span>(
+            <span class="ident">Query</span>::<span class="ident">query</span>(<span class="ident">rrset</span>.<span class="ident">name</span>.<span class="ident">clone</span>(), <span class="ident">RecordType</span>::<span class="ident">DNSSEC</span>(<span class="ident">DNSSECRecordType</span>::<span class="ident">DS</span>)),
+            <span class="ident">DnsRequestOptions</span>::<span class="ident">default</span>(),
+        )
+        .<span class="ident">and_then</span>(<span class="kw">move</span> <span class="op">|</span><span class="ident">ds_message</span><span class="op">|</span> {
+            <span class="kw">let</span> <span class="ident">valid_keys</span> <span class="op">=</span> <span class="ident">rrset</span>
+                .<span class="ident">records</span>
+                .<span class="ident">iter</span>()
+                .<span class="ident">enumerate</span>()
+                .<span class="ident">filter</span>(<span class="op">|</span><span class="kw-2">&amp;</span>(<span class="kw">_</span>, <span class="ident">rr</span>)<span class="op">|</span> <span class="ident">is_dnssec</span>(<span class="ident">rr</span>, <span class="ident">DNSSECRecordType</span>::<span class="ident">DNSKEY</span>))
+                .<span class="ident">filter_map</span>(<span class="op">|</span>(<span class="ident">i</span>, <span class="ident">rr</span>)<span class="op">|</span> {
+                    <span class="kw">if</span> <span class="kw">let</span> <span class="ident">RData</span>::<span class="ident">DNSSEC</span>(<span class="ident">DNSSECRData</span>::<span class="ident">DNSKEY</span>(<span class="kw-2">ref</span> <span class="ident">rdata</span>)) <span class="op">=</span> <span class="kw-2">*</span><span class="ident">rr</span>.<span class="ident">rdata</span>() {
+                        <span class="prelude-val">Some</span>((<span class="ident">i</span>, <span class="ident">rdata</span>))
+                    } <span class="kw">else</span> {
+                        <span class="prelude-val">None</span>
+                    }
+                })
+                .<span class="ident">filter</span>(<span class="op">|</span><span class="kw-2">&amp;</span>(<span class="kw">_</span>, <span class="ident">key_rdata</span>)<span class="op">|</span> {
+                    <span class="ident">ds_message</span>
+                        .<span class="ident">answers</span>()
+                        .<span class="ident">iter</span>()
+                        .<span class="ident">filter</span>(<span class="op">|</span><span class="ident">ds</span><span class="op">|</span> <span class="ident">is_dnssec</span>(<span class="ident">ds</span>, <span class="ident">DNSSECRecordType</span>::<span class="ident">DS</span>))
+                        .<span class="ident">filter_map</span>(<span class="op">|</span><span class="ident">ds</span><span class="op">|</span> {
+                            <span class="kw">if</span> <span class="kw">let</span> <span class="ident">RData</span>::<span class="ident">DNSSEC</span>(<span class="ident">DNSSECRData</span>::<span class="ident">DS</span>(<span class="kw-2">ref</span> <span class="ident">ds_rdata</span>)) <span class="op">=</span> <span class="kw-2">*</span><span class="ident">ds</span>.<span class="ident">rdata</span>() {
+                                <span class="prelude-val">Some</span>(<span class="ident">ds_rdata</span>)
+                            } <span class="kw">else</span> {
+                                <span class="prelude-val">None</span>
+                            }
+                        })
+                        <span class="comment">// must be convered by at least one DS record</span>
+                        .<span class="ident">any</span>(<span class="op">|</span><span class="ident">ds_rdata</span><span class="op">|</span> <span class="ident">ds_rdata</span>.<span class="ident">covers</span>(<span class="kw-2">&amp;</span><span class="ident">rrset</span>.<span class="ident">name</span>, <span class="ident">key_rdata</span>).<span class="ident">unwrap_or</span>(<span class="bool-val">false</span>))
+                })
+                .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">i</span>, <span class="kw">_</span>)<span class="op">|</span> <span class="ident">i</span>)
+                .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;&gt;</span>();
+
+            <span class="kw">if</span> <span class="op">!</span><span class="ident">valid_keys</span>.<span class="ident">is_empty</span>() {
+                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rrset</span> <span class="op">=</span> <span class="ident">rrset</span>;
+                <span class="ident">preserve</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rrset</span>.<span class="ident">records</span>, <span class="ident">valid_keys</span>);
+
+                <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;validated dnskey: {}, {}&quot;</span>, <span class="ident">rrset</span>.<span class="ident">name</span>, <span class="ident">rrset</span>.<span class="ident">records</span>.<span class="ident">len</span>());
+                <span class="prelude-val">Ok</span>(<span class="ident">rrset</span>)
+            } <span class="kw">else</span> {
+                <span class="prelude-val">Err</span>(<span class="ident">ProtoError</span>::<span class="ident">from</span>(<span class="ident">ProtoErrorKind</span>::<span class="ident">Message</span>(
+                    <span class="string">&quot;Could not validate all DNSKEYs&quot;</span>,
+                )))
+            }
+        });
+
+    <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">valid_dnskey</span>)
+}
+
+<span class="doccomment">/// Preseves the specified indexes in vec, all others will be removed</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// # Arguments</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// * `vec` - vec to mutate</span>
+<span class="doccomment">/// * `indexes` - ordered list of indexes to remove</span>
+<span class="kw">fn</span> <span class="ident">preserve</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">I</span><span class="op">&gt;</span>(<span class="ident">vec</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">indexes</span>: <span class="ident">I</span>)
+<span class="kw">where</span>
+    <span class="ident">I</span>: <span class="ident">IntoIterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">usize</span><span class="op">&gt;</span>,
+    <span class="op">&lt;</span><span class="ident">I</span> <span class="kw">as</span> <span class="ident">IntoIterator</span><span class="op">&gt;</span>::<span class="ident">IntoIter</span>: <span class="ident">DoubleEndedIterator</span>,
+{
+    <span class="comment">// this removes all indexes theat were not part of the anchored keys</span>
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">indexes_iter</span> <span class="op">=</span> <span class="ident">indexes</span>.<span class="ident">into_iter</span>().<span class="ident">rev</span>();
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">i</span> <span class="op">=</span> <span class="ident">indexes_iter</span>.<span class="ident">next</span>();
+    <span class="kw">for</span> <span class="ident">j</span> <span class="kw">in</span> (<span class="number">0</span>..<span class="ident">vec</span>.<span class="ident">len</span>()).<span class="ident">rev</span>() {
+        <span class="comment">// check the next indext to preserve</span>
+        <span class="kw">if</span> <span class="ident">i</span>.<span class="ident">map_or</span>(<span class="bool-val">false</span>, <span class="op">|</span><span class="ident">i</span><span class="op">|</span> <span class="ident">i</span> <span class="op">&gt;</span> <span class="ident">j</span>) {
+            <span class="ident">i</span> <span class="op">=</span> <span class="ident">indexes_iter</span>.<span class="ident">next</span>();
+        }
+        <span class="comment">// if the key is not in the set of anchored_keys, remove it</span>
+        <span class="kw">if</span> <span class="ident">i</span>.<span class="ident">map_or</span>(<span class="bool-val">true</span>, <span class="op">|</span><span class="ident">i</span><span class="op">|</span> <span class="ident">i</span> <span class="op">!=</span> <span class="ident">j</span>) {
+            <span class="ident">vec</span>.<span class="ident">remove</span>(<span class="ident">j</span>);
+        }
+    }
+}
+
+<span class="attribute">#[<span class="ident">test</span>]</span>
+<span class="kw">fn</span> <span class="ident">test_preserve</span>() {
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">vec</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>];
+    <span class="kw">let</span> <span class="ident">indexes</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
+    <span class="ident">preserve</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">vec</span>, <span class="ident">indexes</span>);
+    <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">vec</span>, <span class="macro">vec</span><span class="macro">!</span>[]);
+
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">vec</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>];
+    <span class="kw">let</span> <span class="ident">indexes</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[<span class="number">0</span>];
+    <span class="ident">preserve</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">vec</span>, <span class="ident">indexes</span>);
+    <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">vec</span>, <span class="macro">vec</span><span class="macro">!</span>[<span class="number">1</span>]);
+
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">vec</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>];
+    <span class="kw">let</span> <span class="ident">indexes</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[<span class="number">1</span>];
+    <span class="ident">preserve</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">vec</span>, <span class="ident">indexes</span>);
+    <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">vec</span>, <span class="macro">vec</span><span class="macro">!</span>[<span class="number">2</span>]);
+
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">vec</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>];
+    <span class="kw">let</span> <span class="ident">indexes</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[<span class="number">2</span>];
+    <span class="ident">preserve</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">vec</span>, <span class="ident">indexes</span>);
+    <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">vec</span>, <span class="macro">vec</span><span class="macro">!</span>[<span class="number">3</span>]);
+
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">vec</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>];
+    <span class="kw">let</span> <span class="ident">indexes</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[<span class="number">0</span>, <span class="number">2</span>];
+    <span class="ident">preserve</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">vec</span>, <span class="ident">indexes</span>);
+    <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">vec</span>, <span class="macro">vec</span><span class="macro">!</span>[<span class="number">1</span>, <span class="number">3</span>]);
+
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">vec</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>];
+    <span class="kw">let</span> <span class="ident">indexes</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>];
+    <span class="ident">preserve</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">vec</span>, <span class="ident">indexes</span>);
+    <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">vec</span>, <span class="macro">vec</span><span class="macro">!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>]);
+}
+
+<span class="doccomment">/// Verifies that a given RRSET is validly signed by any of the specified RRSIGs.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// Invalid RRSIGs will be ignored. RRSIGs will only be validated against DNSKEYs which can</span>
+<span class="doccomment">///  be validated through a chain back to the `trust_anchor`. As long as one RRSIG is valid,</span>
+<span class="doccomment">///  then the RRSET will be valid.</span>
+<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy</span>::<span class="ident">block_in_if_condition_stmt</span>)]</span>
+<span class="kw">fn</span> <span class="ident">verify_default_rrset</span><span class="op">&lt;</span><span class="ident">H</span><span class="op">&gt;</span>(
+    <span class="ident">handle</span>: <span class="kw-2">&amp;</span><span class="ident">SecureDnsHandle</span><span class="op">&lt;</span><span class="ident">H</span><span class="op">&gt;</span>,
+    <span class="ident">rrset</span>: <span class="ident">Rrset</span>,
+    <span class="ident">rrsigs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Record</span><span class="op">&gt;</span>,
+) <span class="op">-&gt;</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">Rrset</span>, <span class="ident">Error</span> <span class="op">=</span> <span class="ident">ProtoError</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+    <span class="ident">H</span>: <span class="ident">DnsHandle</span>,
+{
+    <span class="comment">// the record set is going to be shared across a bunch of futures, Arc for that.</span>
+    <span class="kw">let</span> <span class="ident">rrset</span> <span class="op">=</span> <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">rrset</span>);
+    <span class="macro">debug</span><span class="macro">!</span>(
+        <span class="string">&quot;default validation {}, record_type: {:?}&quot;</span>,
+        <span class="ident">rrset</span>.<span class="ident">name</span>, <span class="ident">rrset</span>.<span class="ident">record_type</span>
+    );
+
+    <span class="comment">// Special case for self-signed DNSKEYS, validate with itself...</span>
+    <span class="kw">if</span> <span class="ident">rrsigs</span>
+        .<span class="ident">iter</span>()
+        .<span class="ident">filter</span>(<span class="op">|</span><span class="ident">rrsig</span><span class="op">|</span> <span class="ident">is_dnssec</span>(<span class="ident">rrsig</span>, <span class="ident">DNSSECRecordType</span>::<span class="ident">RRSIG</span>))
+        .<span class="ident">any</span>(<span class="op">|</span><span class="ident">rrsig</span><span class="op">|</span> {
+            <span class="kw">if</span> <span class="kw">let</span> <span class="ident">RData</span>::<span class="ident">DNSSEC</span>(<span class="ident">DNSSECRData</span>::<span class="ident">SIG</span>(<span class="kw-2">ref</span> <span class="ident">sig</span>)) <span class="op">=</span> <span class="kw-2">*</span><span class="ident">rrsig</span>.<span class="ident">rdata</span>() {
+                <span class="kw">return</span> <span class="ident">RecordType</span>::<span class="ident">DNSSEC</span>(<span class="ident">DNSSECRecordType</span>::<span class="ident">DNSKEY</span>) <span class="op">==</span> <span class="ident">rrset</span>.<span class="ident">record_type</span>
+                    <span class="op">&amp;&amp;</span> <span class="ident">sig</span>.<span class="ident">signer_name</span>() <span class="op">==</span> <span class="kw-2">&amp;</span><span class="ident">rrset</span>.<span class="ident">name</span>;
+            } <span class="kw">else</span> {
+                <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;expected a SIG here&quot;</span>);
+            }
+        })
+    {
+        <span class="comment">// in this case it was looks like a self-signed key, first validate the signature</span>
+        <span class="comment">//  then return rrset. Like the standard case below, the DNSKEY is validated</span>
+        <span class="comment">//  after this function. This function is only responsible for validating the signature</span>
+        <span class="comment">//  the DNSKey validation should come after, see verify_rrset().</span>
+        <span class="kw">return</span> <span class="ident">Box</span>::<span class="ident">new</span>(
+            <span class="ident">done</span>(
+                <span class="ident">rrsigs</span>
+                    .<span class="ident">into_iter</span>()
+                    <span class="comment">// this filter is technically unnecessary, can probably remove it...</span>
+                    .<span class="ident">filter</span>(<span class="op">|</span><span class="ident">rrsig</span><span class="op">|</span> <span class="ident">is_dnssec</span>(<span class="ident">rrsig</span>, <span class="ident">DNSSECRecordType</span>::<span class="ident">RRSIG</span>))
+                    .<span class="ident">map</span>(<span class="op">|</span><span class="ident">rrsig</span><span class="op">|</span> {
+                        <span class="kw">if</span> <span class="kw">let</span> <span class="ident">RData</span>::<span class="ident">DNSSEC</span>(<span class="ident">DNSSECRData</span>::<span class="ident">SIG</span>(<span class="ident">sig</span>)) <span class="op">=</span> <span class="ident">rrsig</span>.<span class="ident">unwrap_rdata</span>() {
+                            <span class="comment">// setting up the context explicitly.</span>
+                            <span class="ident">sig</span>
+                        } <span class="kw">else</span> {
+                            <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;expected a SIG here&quot;</span>);
+                        }
+                    })
+                    .<span class="ident">filter_map</span>(<span class="op">|</span><span class="ident">sig</span><span class="op">|</span> {
+                        <span class="kw">let</span> <span class="ident">rrset</span> <span class="op">=</span> <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="ident">rrset</span>);
+
+                        <span class="kw">if</span> <span class="ident">rrset</span>.<span class="ident">records</span>.<span class="ident">iter</span>().<span class="ident">any</span>(<span class="op">|</span><span class="ident">r</span><span class="op">|</span> {
+                            <span class="kw">if</span> <span class="kw">let</span> <span class="ident">RData</span>::<span class="ident">DNSSEC</span>(<span class="ident">DNSSECRData</span>::<span class="ident">DNSKEY</span>(<span class="kw-2">ref</span> <span class="ident">dnskey</span>)) <span class="op">=</span> <span class="kw-2">*</span><span class="ident">r</span>.<span class="ident">rdata</span>() {
+                                <span class="ident">verify_rrset_with_dnskey</span>(<span class="ident">dnskey</span>, <span class="kw-2">&amp;</span><span class="ident">sig</span>, <span class="kw-2">&amp;</span><span class="ident">rrset</span>).<span class="ident">is_ok</span>()
+                            } <span class="kw">else</span> {
+                                <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;expected a DNSKEY here: {:?}&quot;</span>, <span class="ident">r</span>.<span class="ident">rdata</span>());
+                            }
+                        }) {
+                            <span class="prelude-val">Some</span>(<span class="ident">rrset</span>)
+                        } <span class="kw">else</span> {
+                            <span class="prelude-val">None</span>
+                        }
+                    })
+                    .<span class="ident">next</span>()
+                    .<span class="ident">ok_or_else</span>(<span class="op">||</span> {
+                        <span class="ident">ProtoError</span>::<span class="ident">from</span>(<span class="ident">ProtoErrorKind</span>::<span class="ident">Message</span>(<span class="string">&quot;self-signed dnskey is invalid&quot;</span>))
+                    }),
+            )
+            .<span class="ident">map</span>(<span class="kw">move</span> <span class="op">|</span><span class="ident">rrset</span><span class="op">|</span> <span class="ident">Arc</span>::<span class="ident">try_unwrap</span>(<span class="ident">rrset</span>).<span class="ident">expect</span>(<span class="string">&quot;unable to unwrap Arc&quot;</span>)),
+        );
+    }
+
+    <span class="comment">// we can validate with any of the rrsigs...</span>
+    <span class="comment">//  i.e. the first that validates is good enough</span>
+    <span class="comment">//  TODO: could there be a cert downgrade attack here with a MITM stripping stronger RRSIGs?</span>
+    <span class="comment">//         we could check for the strongest RRSIG and only use that...</span>
+    <span class="comment">//         though, since the entire package isn&#39;t signed any RRSIG could have been injected,</span>
+    <span class="comment">//         right? meaning if there is an attack on any of the acceptable algorithms, we&#39;d be</span>
+    <span class="comment">//         succeptable until that algorithm is removed as an option.</span>
+    <span class="comment">//        dns over TLS will mitigate this.</span>
+    <span class="comment">//  TODO: strip RRSIGS to accepted algorithms and make algorithms configurable.</span>
+    <span class="kw">let</span> <span class="ident">verifications</span> <span class="op">=</span> <span class="ident">rrsigs</span>.<span class="ident">into_iter</span>()
+                            <span class="comment">// this filter is technically unnecessary, can probably remove it...</span>
+                            .<span class="ident">filter</span>(<span class="op">|</span><span class="ident">rrsig</span><span class="op">|</span> <span class="ident">is_dnssec</span>(<span class="ident">rrsig</span>, <span class="ident">DNSSECRecordType</span>::<span class="ident">RRSIG</span>))
+                            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">rrsig</span><span class="op">|</span>
+                              <span class="kw">if</span> <span class="kw">let</span> <span class="ident">RData</span>::<span class="ident">DNSSEC</span>(<span class="ident">DNSSECRData</span>::<span class="ident">SIG</span>(<span class="ident">sig</span>)) <span class="op">=</span> <span class="ident">rrsig</span>.<span class="ident">unwrap_rdata</span>() {
+                                <span class="comment">// setting up the context explicitly.</span>
+                                <span class="ident">sig</span>
+                              } <span class="kw">else</span> {
+                                <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;expected a SIG here&quot;</span>);
+                              }
+                            )
+                            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">sig</span><span class="op">|</span> {
+                              <span class="kw">let</span> <span class="ident">rrset</span> <span class="op">=</span> <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="ident">rrset</span>);
+                              <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">handle</span> <span class="op">=</span> <span class="ident">handle</span>.<span class="ident">clone_with_context</span>();
+
+                              <span class="ident">handle</span>.<span class="ident">lookup</span>(<span class="ident">Query</span>::<span class="ident">query</span>(<span class="ident">sig</span>.<span class="ident">signer_name</span>().<span class="ident">clone</span>(), <span class="ident">RecordType</span>::<span class="ident">DNSSEC</span>(<span class="ident">DNSSECRecordType</span>::<span class="ident">DNSKEY</span>)),
+                              <span class="ident">DnsRequestOptions</span>::<span class="ident">default</span>())
+                                    .<span class="ident">and_then</span>(<span class="kw">move</span> <span class="op">|</span><span class="ident">message</span><span class="op">|</span>
+                                      <span class="comment">// DNSKEYs are validated by the inner query</span>
+                                      <span class="ident">message</span>.<span class="ident">answers</span>()
+                                             .<span class="ident">iter</span>()
+                                             .<span class="ident">filter</span>(<span class="op">|</span><span class="ident">r</span><span class="op">|</span> <span class="ident">is_dnssec</span>(<span class="ident">r</span>, <span class="ident">DNSSECRecordType</span>::<span class="ident">DNSKEY</span>))
+                                             .<span class="ident">find</span>(<span class="op">|</span><span class="ident">r</span><span class="op">|</span>
+                                               <span class="kw">if</span> <span class="kw">let</span> <span class="ident">RData</span>::<span class="ident">DNSSEC</span>(<span class="ident">DNSSECRData</span>::<span class="ident">DNSKEY</span>(<span class="kw-2">ref</span> <span class="ident">dnskey</span>)) <span class="op">=</span> <span class="kw-2">*</span><span class="ident">r</span>.<span class="ident">rdata</span>() {
+                                                 <span class="ident">verify_rrset_with_dnskey</span>(<span class="ident">dnskey</span>, <span class="kw-2">&amp;</span><span class="ident">sig</span>, <span class="kw-2">&amp;</span><span class="ident">rrset</span>).<span class="ident">is_ok</span>()
+                                               } <span class="kw">else</span> {
+                                                 <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;expected a DNSKEY here: {:?}&quot;</span>, <span class="ident">r</span>.<span class="ident">rdata</span>());
+                                               }
+                                             )
+                                             .<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">rrset</span>)
+                                             .<span class="ident">ok_or_else</span>(<span class="op">||</span> <span class="ident">ProtoError</span>::<span class="ident">from</span>(<span class="ident">ProtoErrorKind</span>::<span class="ident">Message</span>(<span class="string">&quot;validation failed&quot;</span>)))
+                                    )
+                            })
+                            .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;&gt;</span>();
+
+    <span class="comment">// if there are no available verifications, then we are in a failed state.</span>
+    <span class="kw">if</span> <span class="ident">verifications</span>.<span class="ident">is_empty</span>() {
+        <span class="kw">return</span> <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">failed</span>(<span class="ident">ProtoError</span>::<span class="ident">from</span>(<span class="ident">ProtoErrorKind</span>::<span class="ident">RrsigsNotPresent</span> {
+            <span class="ident">name</span>: <span class="ident">rrset</span>.<span class="ident">name</span>.<span class="ident">clone</span>(),
+            <span class="ident">record_type</span>: <span class="ident">rrset</span>.<span class="ident">record_type</span>,
+        })));
+    }
+
+    <span class="comment">// as long as any of the verifcations is good, then the RRSET is valid.</span>
+    <span class="kw">let</span> <span class="ident">select</span> <span class="op">=</span> <span class="ident">select_ok</span>(<span class="ident">verifications</span>)
+        <span class="comment">// getting here means at least one of the rrsigs succeeded...</span>
+        .<span class="ident">map</span>(<span class="kw">move</span> <span class="op">|</span>(<span class="ident">rrset</span>, <span class="ident">rest</span>)<span class="op">|</span> {
+            <span class="ident">drop</span>(<span class="ident">rest</span>); <span class="comment">// drop all others, should free up Arc</span>
+            <span class="ident">Arc</span>::<span class="ident">try_unwrap</span>(<span class="ident">rrset</span>).<span class="ident">expect</span>(<span class="string">&quot;unable to unwrap Arc&quot;</span>)
+        });
+
+    <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">select</span>)
+}
+
+<span class="doccomment">/// Verifies the given SIG of the RRSET with the DNSKEY.</span>
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;dnssec&quot;</span>)]</span>
+<span class="kw">fn</span> <span class="ident">verify_rrset_with_dnskey</span>(<span class="ident">dnskey</span>: <span class="kw-2">&amp;</span><span class="ident">DNSKEY</span>, <span class="ident">sig</span>: <span class="kw-2">&amp;</span><span class="ident">SIG</span>, <span class="ident">rrset</span>: <span class="kw-2">&amp;</span><span class="ident">Rrset</span>) <span class="op">-&gt;</span> <span class="ident">ProtoResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">if</span> <span class="ident">dnskey</span>.<span class="ident">revoke</span>() {
+        <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;revoked&quot;</span>);
+        <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ProtoErrorKind</span>::<span class="ident">Message</span>(<span class="string">&quot;revoked&quot;</span>).<span class="ident">into</span>());
+    } <span class="comment">// TODO: does this need to be validated? RFC 5011</span>
+    <span class="kw">if</span> <span class="op">!</span><span class="ident">dnskey</span>.<span class="ident">zone_key</span>() {
+        <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ProtoErrorKind</span>::<span class="ident">Message</span>(<span class="string">&quot;is not a zone key&quot;</span>).<span class="ident">into</span>());
+    }
+    <span class="kw">if</span> <span class="ident">dnskey</span>.<span class="ident">algorithm</span>() <span class="op">!=</span> <span class="ident">sig</span>.<span class="ident">algorithm</span>() {
+        <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ProtoErrorKind</span>::<span class="ident">Message</span>(<span class="string">&quot;mismatched algorithm&quot;</span>).<span class="ident">into</span>());
+    }
+
+    <span class="ident">dnskey</span>
+        .<span class="ident">verify_rrsig</span>(<span class="kw-2">&amp;</span><span class="ident">rrset</span>.<span class="ident">name</span>, <span class="ident">rrset</span>.<span class="ident">record_class</span>, <span class="ident">sig</span>, <span class="kw-2">&amp;</span><span class="ident">rrset</span>.<span class="ident">records</span>)
+        .<span class="ident">map_err</span>(<span class="ident">Into</span>::<span class="ident">into</span>)
+}
+
+<span class="doccomment">/// Will always return an error. To enable record verification compile with the openssl feature.</span>
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;dnssec&quot;</span>))]</span>
+<span class="kw">fn</span> <span class="ident">verify_rrset_with_dnskey</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">DNSKEY</span>, <span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">SIG</span>, <span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Rrset</span>) <span class="op">-&gt;</span> <span class="ident">ProtoResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="prelude-val">Err</span>(<span class="ident">ProtoErrorKind</span>::<span class="ident">Message</span>(<span class="string">&quot;openssl or ring feature(s) not enabled&quot;</span>).<span class="ident">into</span>())
+}
+
+<span class="doccomment">/// Verifies NSEC records</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// ```text</span>
+<span class="doccomment">/// RFC 4035             DNSSEC Protocol Modifications            March 2005</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// 5.4.  Authenticated Denial of Existence</span>
+<span class="doccomment">///</span>
+<span class="doccomment">///  A resolver can use authenticated NSEC RRs to prove that an RRset is</span>
+<span class="doccomment">///  not present in a signed zone.  Security-aware name servers should</span>
+<span class="doccomment">///  automatically include any necessary NSEC RRs for signed zones in</span>
+<span class="doccomment">///  their responses to security-aware resolvers.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">///  Denial of existence is determined by the following rules:</span>
+<span class="doccomment">///</span>
+<span class="doccomment">///  o  If the requested RR name matches the owner name of an</span>
+<span class="doccomment">///     authenticated NSEC RR, then the NSEC RR&#39;s type bit map field lists</span>
+<span class="doccomment">///     all RR types present at that owner name, and a resolver can prove</span>
+<span class="doccomment">///     that the requested RR type does not exist by checking for the RR</span>
+<span class="doccomment">///     type in the bit map.  If the number of labels in an authenticated</span>
+<span class="doccomment">///     NSEC RR&#39;s owner name equals the Labels field of the covering RRSIG</span>
+<span class="doccomment">///     RR, then the existence of the NSEC RR proves that wildcard</span>
+<span class="doccomment">///     expansion could not have been used to match the request.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">///  o  If the requested RR name would appear after an authenticated NSEC</span>
+<span class="doccomment">///     RR&#39;s owner name and before the name listed in that NSEC RR&#39;s Next</span>
+<span class="doccomment">///     Domain Name field according to the canonical DNS name order</span>
+<span class="doccomment">///     defined in [RFC4034], then no RRsets with the requested name exist</span>
+<span class="doccomment">///     in the zone.  However, it is possible that a wildcard could be</span>
+<span class="doccomment">///     used to match the requested RR owner name and type, so proving</span>
+<span class="doccomment">///     that the requested RRset does not exist also requires proving that</span>
+<span class="doccomment">///     no possible wildcard RRset exists that could have been used to</span>
+<span class="doccomment">///     generate a positive response.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">///  In addition, security-aware resolvers MUST authenticate the NSEC</span>
+<span class="doccomment">///  RRsets that comprise the non-existence proof as described in Section</span>
+<span class="doccomment">///  5.3.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">///  To prove the non-existence of an RRset, the resolver must be able to</span>
+<span class="doccomment">///  verify both that the queried RRset does not exist and that no</span>
+<span class="doccomment">///  relevant wildcard RRset exists.  Proving this may require more than</span>
+<span class="doccomment">///  one NSEC RRset from the zone.  If the complete set of necessary NSEC</span>
+<span class="doccomment">///  RRsets is not present in a response (perhaps due to message</span>
+<span class="doccomment">///  truncation), then a security-aware resolver MUST resend the query in</span>
+<span class="doccomment">///  order to attempt to obtain the full collection of NSEC RRs necessary</span>
+<span class="doccomment">///  to verify the non-existence of the requested RRset.  As with all DNS</span>
+<span class="doccomment">///  operations, however, the resolver MUST bound the work it puts into</span>
+<span class="doccomment">///  answering any particular query.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">///  Since a validated NSEC RR proves the existence of both itself and its</span>
+<span class="doccomment">///  corresponding RRSIG RR, a validator MUST ignore the settings of the</span>
+<span class="doccomment">///  NSEC and RRSIG bits in an NSEC RR.</span>
+<span class="doccomment">/// ```</span>
+<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy</span>::<span class="ident">block_in_if_condition_stmt</span>)]</span>
+<span class="attribute">#[<span class="ident">doc</span>(<span class="ident">hidden</span>)]</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify_nsec</span>(<span class="ident">query</span>: <span class="kw-2">&amp;</span><span class="ident">Query</span>, <span class="ident">soa_name</span>: <span class="kw-2">&amp;</span><span class="ident">Name</span>, <span class="ident">nsecs</span>: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">Record</span>]) <span class="op">-&gt;</span> <span class="ident">bool</span> {
+    <span class="comment">// TODO: consider convering this to Result, and giving explicit reason for the failure</span>
+
+    <span class="comment">// first look for a record with the same name</span>
+    <span class="comment">//  if they are, then the query_type should not exist in the NSEC record.</span>
+    <span class="comment">//  if we got an NSEC record of the same name, but it is listed in the NSEC types,</span>
+    <span class="comment">//    WTF? is that bad server, bad record</span>
+    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">nsec</span>) <span class="op">=</span> <span class="ident">nsecs</span>.<span class="ident">iter</span>().<span class="ident">find</span>(<span class="op">|</span><span class="ident">nsec</span><span class="op">|</span> <span class="ident">query</span>.<span class="ident">name</span>() <span class="op">==</span> <span class="ident">nsec</span>.<span class="ident">name</span>()) {
+        <span class="kw">return</span> <span class="ident">nsec</span>
+            .<span class="ident">rdata</span>()
+            .<span class="ident">as_dnssec</span>()
+            .<span class="ident">and_then</span>(<span class="ident">DNSSECRData</span>::<span class="ident">as_nsec</span>)
+            .<span class="ident">map_or</span>(<span class="bool-val">false</span>, <span class="op">|</span><span class="ident">rdata</span><span class="op">|</span> {
+                <span class="comment">// this should not be in the covered list</span>
+                <span class="op">!</span><span class="ident">rdata</span>.<span class="ident">type_bit_maps</span>().<span class="ident">contains</span>(<span class="kw-2">&amp;</span><span class="ident">query</span>.<span class="ident">query_type</span>())
+            });
+    }
+
+    <span class="kw">let</span> <span class="ident">verify_nsec_coverage</span> <span class="op">=</span> <span class="op">|</span><span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">Name</span><span class="op">|</span> <span class="op">-&gt;</span> <span class="ident">bool</span> {
+        <span class="ident">nsecs</span>.<span class="ident">iter</span>().<span class="ident">any</span>(<span class="op">|</span><span class="ident">nsec</span><span class="op">|</span> {
+            <span class="comment">// the query name must be greater than nsec&#39;s label (or equal in the case of wildcard)</span>
+            <span class="ident">name</span> <span class="op">&gt;=</span> <span class="ident">nsec</span>.<span class="ident">name</span>() <span class="op">&amp;&amp;</span> {
+                <span class="ident">nsec</span>.<span class="ident">rdata</span>()
+                    .<span class="ident">as_dnssec</span>()
+                    .<span class="ident">and_then</span>(<span class="ident">DNSSECRData</span>::<span class="ident">as_nsec</span>)
+                    .<span class="ident">map_or</span>(<span class="bool-val">false</span>, <span class="op">|</span><span class="ident">rdata</span><span class="op">|</span> {
+                        <span class="comment">// the query name is less than the next name</span>
+                        <span class="comment">// or this record wraps the end, i.e. is the last record</span>
+                        <span class="ident">name</span> <span class="op">&lt;</span> <span class="ident">rdata</span>.<span class="ident">next_domain_name</span>() <span class="op">||</span> <span class="ident">rdata</span>.<span class="ident">next_domain_name</span>() <span class="op">&lt;</span> <span class="ident">nsec</span>.<span class="ident">name</span>()
+                    })
+            }
+        })
+    };
+
+    <span class="kw">if</span> <span class="op">!</span><span class="ident">verify_nsec_coverage</span>(<span class="ident">query</span>.<span class="ident">name</span>()) {
+        <span class="comment">// continue to validate there is no wildcard</span>
+        <span class="kw">return</span> <span class="bool-val">false</span>;
+    }
+
+    <span class="comment">// validate ANY or *.domain record existance</span>
+
+    <span class="comment">// we need the wildcard proof, but make sure that it&#39;s still part of the zone.</span>
+    <span class="kw">let</span> <span class="ident">wildcard</span> <span class="op">=</span> <span class="ident">query</span>.<span class="ident">name</span>().<span class="ident">base_name</span>();
+    <span class="kw">let</span> <span class="ident">wildcard</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">soa_name</span>.<span class="ident">zone_of</span>(<span class="kw-2">&amp;</span><span class="ident">wildcard</span>) {
+        <span class="ident">wildcard</span>
+    } <span class="kw">else</span> {
+        <span class="ident">soa_name</span>.<span class="ident">clone</span>()
+    };
+
+    <span class="comment">// don&#39;t need to validate the same name again</span>
+    <span class="kw">if</span> <span class="ident">wildcard</span> <span class="op">==</span> <span class="kw-2">*</span><span class="ident">query</span>.<span class="ident">name</span>() {
+        <span class="comment">// this was validated by the nsec coverage over the query.name()</span>
+        <span class="bool-val">true</span>
+    } <span class="kw">else</span> {
+        <span class="comment">// this is the final check, return it&#39;s value</span>
+        <span class="comment">//  if there is wildcard coverage, we&#39;re good.</span>
+        <span class="ident">verify_nsec_coverage</span>(<span class="kw-2">&amp;</span><span class="ident">wildcard</span>)
+    }
+}
+</pre></div>
+</section><section id="search" class="content hidden"></section><section class="footer"></section><aside id="help" class="hidden"><div><h1 class="hidden">Help</h1><div class="shortcuts"><h2>Keyboard Shortcuts</h2><dl><dt><kbd>?</kbd></dt><dd>Show this help dialog</dd><dt><kbd>S</kbd></dt><dd>Focus the search field</dd><dt><kbd>↑</kbd></dt><dd>Move up in search results</dd><dt><kbd>↓</kbd></dt><dd>Move down in search results</dd><dt><kbd>↹</kbd></dt><dd>Switch tab</dd><dt><kbd>&#9166;</kbd></dt><dd>Go to active search result</dd><dt><kbd>+</kbd></dt><dd>Expand all sections</dd><dt><kbd>-</kbd></dt><dd>Collapse all sections</dd></dl></div><div class="infos"><h2>Search Tricks</h2><p>Prefix searches with a type followed by a colon (e.g., <code>fn:</code>) to restrict the search to a given type.</p><p>Accepted types are: <code>fn</code>, <code>mod</code>, <code>struct</code>, <code>enum</code>, <code>trait</code>, <code>type</code>, <code>macro</code>, and <code>const</code>.</p><p>Search functions by type signature (e.g., <code>vec -> usize</code> or <code>* -> vec</code>)</p><p>Search multiple things at once by splitting your query with comma (e.g., <code>str,u8</code> or <code>String,struct:Vec,test</code>)</p></div></div></aside><script>window.rootPath = "../../../";window.currentCrate = "trust_dns_proto";</script><script src="../../../aliases.js"></script><script src="../../../main.js"></script><script src="../../../source-script.js"></script><script src="../../../source-files.js"></script><script defer src="../../../search-index.js"></script></body></html>

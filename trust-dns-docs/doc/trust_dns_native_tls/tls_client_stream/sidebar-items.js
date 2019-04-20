@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["TlsClientStreamBuilder","Builder for TlsClientStream"]],"type":[["TlsClientStream","TlsClientStream secure DNS over TCP stream"]]});

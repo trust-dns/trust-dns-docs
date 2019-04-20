@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["tls_from_stream","Initializes a TlsStream with an existing tokio_tls::TlsStream."]],"struct":[["TlsStreamBuilder","A builder for the TlsStream"]],"type":[["TlsStream","A TlsStream counterpart to the TcpStream which embeds a secure TlsStream"]]});

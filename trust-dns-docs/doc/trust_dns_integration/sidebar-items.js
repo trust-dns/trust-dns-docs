@@ -1,0 +1,1 @@
+initSidebarItems({"mod":[["authority",""],["mock_client",""],["tls_client_connection","TLS based DNS client connection for Client impls TODO: This modules was moved from trust-dns-rustls, it really doesn't need to exist if tests are refactored..."]],"struct":[["NeverReturnsClientConnection",""],["NeverReturnsClientStream",""],["TestClientStream",""],["TestResponseHandler",""]]});

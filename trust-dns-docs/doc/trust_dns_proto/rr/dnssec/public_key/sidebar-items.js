@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["PublicKeyEnum","Variants of all know public keys"]],"struct":[["Ed25519","Ed25519 Public key"],["PublicKeyBuf","An owned variant of PublicKey"],["Rsa","Rsa public key"]],"trait":[["PublicKey","PublicKeys implement the ability to ideally be zero copy abstractions over public keys for verifying signed content."]]});

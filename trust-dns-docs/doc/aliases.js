@@ -1,0 +1,15 @@
+var ALIASES = {};
+ALIASES["dnskey_to_pem"] = {};
+ALIASES["get_root_ksks"] = {};
+ALIASES["named"] = {};
+ALIASES["pem_to_public_dnskey"] = {};
+ALIASES["trust_dns"] = {};
+ALIASES["trust_dns_compatibility"] = {};
+ALIASES["trust_dns_https"] = {};
+ALIASES["trust_dns_integration"] = {};
+ALIASES["trust_dns_native_tls"] = {};
+ALIASES["trust_dns_openssl"] = {};
+ALIASES["trust_dns_proto"] = {};
+ALIASES["trust_dns_resolver"] = {};
+ALIASES["trust_dns_rustls"] = {};
+ALIASES["trust_dns_server"] = {};

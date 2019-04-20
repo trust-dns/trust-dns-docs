@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["CertType","Certificate format of the file being read"],["PrivateKeyType","Format of the private key file to read"]],"fn":[["load_cert","Load a Certificate from the path (with rustls)"]],"struct":[["KeyConfig","Key pair configuration for DNSSec keys for signing a zone"],["TlsCertConfig","Configuration for a TLS certificate"]]});

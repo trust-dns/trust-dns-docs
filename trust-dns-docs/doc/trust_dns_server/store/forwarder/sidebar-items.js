@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["ForwardAuthority","An authority that will forward resolutions to upstream resolvers."],["ForwardConfig","Configuration for master file based zones"]]});

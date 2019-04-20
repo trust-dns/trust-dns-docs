@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["emit","RFC 6840"],["read","Read the RData from the given Decoder"]],"struct":[["NSEC","RFC 4034, DNSSEC Resource Records, March 2005"]]});

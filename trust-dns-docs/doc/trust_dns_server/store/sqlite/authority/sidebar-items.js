@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["SqliteAuthority","SqliteAuthority is responsible for storing the resource records for a particular zone."]]});

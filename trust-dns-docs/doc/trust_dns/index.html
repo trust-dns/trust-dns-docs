@@ -1,0 +1,198 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="API documentation for the Rust `trust_dns` crate."><meta name="keywords" content="rust, rustlang, rust-lang, trust_dns"><title>trust_dns - Rust</title><link rel="stylesheet" type="text/css" href="../normalize.css"><link rel="stylesheet" type="text/css" href="../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../dark.css"><link rel="stylesheet" type="text/css" href="../light.css" id="themeStyle"><script src="../storage.js"></script><noscript><link rel="stylesheet" href="../noscript.css"></noscript><link rel="shortcut icon" href="../favicon.ico"><style type="text/css">#crate-search{background-image:url("../down-arrow.svg");}</style></head><body class="rustdoc mod"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../trust_dns/index.html'><img src='../rust-logo.png' alt='logo' width='100'></a><p class='location'>Crate trust_dns</p><div class="sidebar-elems"><a id='all-types' href='all.html'><p>See all trust_dns's items</p></a><div class="block items"><ul><li><a href="#reexports">Re-exports</a></li><li><a href="#modules">Modules</a></li><li><a href="#structs">Structs</a></li><li><a href="#functions">Functions</a></li></ul></div><p class='location'></p><script>window.sidebarCurrent = {name: 'trust_dns', ty: 'mod', relpath: '../'};</script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../theme.js"></script><nav class="sub"><form class="search-form js-only"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../settings.html"><img src="../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><h1 class='fqn'><span class='out-of-band'><span id='render-detail'><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class='inner'>&#x2212;</span>]</a></span><a class='srclink' href='../src/trust_dns/lib.rs.html#16-324' title='goto source code'>[src]</a></span><span class='in-band'>Crate <a class="mod" href=''>trust_dns</a></span></h1><div class='docblock'><p>Trust-DNS is intended to be a fully compliant domain name server and client library.</p>
+<p>The Client library is responsible for the basic protocols responsible for communicating with DNS servers (authorities) and resolvers. It can be used for managing DNS records through the use of update operations. It is possible to send raw DNS Messages with the Client, but for ease of use the <code>query</code> and various other update operations are recommended for general use.</p>
+<p>For a system-like resolver, see <a href="https://docs.rs/trust-dns-resolver">trust-dns-resolver</a>. This is most likely what you want if all you want to do is lookup IP addresses.</p>
+<p>For serving DNS serving, see <a href="https://docs.rs/trust-dns-server">trust-dns-server</a>.</p>
+<h1 id="goals" class="section-header"><a href="#goals">Goals</a></h1>
+<ul>
+<li>Only safe Rust</li>
+<li>All errors handled</li>
+<li>Simple to manage servers</li>
+<li>High level abstraction for clients</li>
+<li>Secure dynamic update</li>
+<li>New features for securing public information</li>
+</ul>
+<h1 id="usage" class="section-header"><a href="#usage">Usage</a></h1>
+<p>This shows basic usage of the SyncClient. More examples will be associated directly with other types.</p>
+<h2 id="dependency" class="section-header"><a href="#dependency">Dependency</a></h2>
+<pre><code class="language-toml">[dependencies]
+trust-dns = &quot;^0.14&quot;
+</code></pre>
+<p>By default DNSSec validation is built in with OpenSSL, this can be disabled with:</p>
+<pre><code class="language-toml">[dependencies]
+trust-dns = { version = &quot;0.10&quot;, default-features = false }
+</code></pre>
+<p>Extern the crate into your program or library:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">trust_dns</span>;</pre></div>
+<h2 id="objects" class="section-header"><a href="#objects">Objects</a></h2>
+<p>There are two variations of implementations of the Client. The <code>SyncClient</code>, a synchronous client, and the <code>ClientFuture</code>, a Tokio async client. <code>SyncClient</code> is an implementation of the <code>Client</code> trait, there is another implementation, <code>SecureSyncClient</code>, which validates DNSSec records. For these basic examples we'll only look at the <code>SyncClient</code></p>
+<p>First we must decide on the type of connection, there are three supported by Trust-DNS today, UDP, TCP and TLS. TLS requires OpenSSL by default, see also <a href="https://docs.rs/trust-dns-native-tls">trust-dns-native-tls</a> and <a href="https://docs.rs/trust-dns-rustls">trust-dns-rustls</a> for other TLS options.</p>
+<h2 id="setup-a-connection" class="section-header"><a href="#setup-a-connection">Setup a connection</a></h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="kw">use</span> <span class="ident">trust_dns</span>::<span class="ident">client</span>::{<span class="ident">Client</span>, <span class="ident">ClientConnection</span>, <span class="ident">ClientStreamHandle</span>, <span class="ident">SyncClient</span>};
+<span class="kw">use</span> <span class="ident">trust_dns</span>::<span class="ident">udp</span>::<span class="ident">UdpClientConnection</span>;
+
+<span class="kw">let</span> <span class="ident">address</span> <span class="op">=</span> <span class="string">&quot;8.8.8.8:53&quot;</span>.<span class="ident">parse</span>().<span class="ident">unwrap</span>();
+<span class="kw">let</span> <span class="ident">conn</span> <span class="op">=</span> <span class="ident">UdpClientConnection</span>::<span class="ident">new</span>(<span class="ident">address</span>).<span class="ident">unwrap</span>();
+
+<span class="comment">// and then create the Client</span>
+<span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">SyncClient</span>::<span class="ident">new</span>(<span class="ident">conn</span>);</pre></div>
+<p>At this point the client is ready to be used. See also <code>client::SecureSyncClient</code> for DNSSec validation. The rest of these examples will assume that the above boilerplate has already been performed.</p>
+<h2 id="querying" class="section-header"><a href="#querying">Querying</a></h2>
+<p>Using the Client to query for DNS records is easy enough, though it performs no resolution. The <code>trust-dns-resolver</code> has a simpler interface if that's what is desired. Over time that library will gain more features to generically query for differnet types.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">net</span>::<span class="ident">Ipv4Addr</span>;
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">str</span>::<span class="ident">FromStr</span>;
+<span class="kw">use</span> <span class="ident">trust_dns</span>::<span class="ident">op</span>::<span class="ident">DnsResponse</span>;
+<span class="kw">use</span> <span class="ident">trust_dns</span>::<span class="ident">rr</span>::{<span class="ident">DNSClass</span>, <span class="ident">Name</span>, <span class="ident">RData</span>, <span class="ident">Record</span>, <span class="ident">RecordType</span>};
+
+<span class="comment">// Specify the name, note the final &#39;.&#39; which specifies it&#39;s an FQDN</span>
+<span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="ident">Name</span>::<span class="ident">from_str</span>(<span class="string">&quot;www.example.com.&quot;</span>).<span class="ident">unwrap</span>();
+
+<span class="comment">// NOTE: see &#39;Setup a connection&#39; example above</span>
+<span class="comment">// Send the query and get a message response, see RecordType for all supported options</span>
+<span class="kw">let</span> <span class="ident">response</span>: <span class="ident">DnsResponse</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">query</span>(<span class="kw-2">&amp;</span><span class="ident">name</span>, <span class="ident">DNSClass</span>::<span class="ident">IN</span>, <span class="ident">RecordType</span>::<span class="ident">A</span>).<span class="ident">unwrap</span>();
+
+<span class="comment">// Messages are the packets sent between client and server in DNS.</span>
+<span class="comment">//  there are many fields to a Message, DnsResponse can be dereferenced into</span>
+<span class="comment">//  a Message. It&#39;s beyond the scope of these examples</span>
+<span class="comment">//  to explain all the details of a Message. See trust_dns::op::message::Message for more details.</span>
+<span class="comment">//  generally we will be insterested in the Message::answers</span>
+<span class="kw">let</span> <span class="ident">answers</span>: <span class="kw-2">&amp;</span>[<span class="ident">Record</span>] <span class="op">=</span> <span class="ident">response</span>.<span class="ident">answers</span>();
+
+<span class="comment">// Records are generic objects which can contain any data.</span>
+<span class="comment">//  In order to access it we need to first check what type of record it is</span>
+<span class="comment">//  In this case we are interested in A, IPv4 address</span>
+<span class="kw">if</span> <span class="kw">let</span> <span class="kw-2">&amp;</span><span class="ident">RData</span>::<span class="ident">A</span>(<span class="kw-2">ref</span> <span class="ident">ip</span>) <span class="op">=</span> <span class="ident">answers</span>[<span class="number">0</span>].<span class="ident">rdata</span>() {
+    <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="kw-2">*</span><span class="ident">ip</span>, <span class="ident">Ipv4Addr</span>::<span class="ident">new</span>(<span class="number">93</span>, <span class="number">184</span>, <span class="number">216</span>, <span class="number">34</span>))
+} <span class="kw">else</span> {
+    <span class="macro">assert</span><span class="macro">!</span>(<span class="bool-val">false</span>, <span class="string">&quot;unexpected result&quot;</span>)
+}</pre></div>
+<p>In the above example we successfully queried for a A record. There are many other types, each can be independenly queried and the associated <code>trust_dns::rr::record_data::RData</code> has a variant with the deserialized data for the record stored.</p>
+<h2 id="dynamic-update" class="section-header"><a href="#dynamic-update">Dynamic update</a></h2>
+<p>Currently <code>trust-dns</code> supports SIG(0) signed records for authentication and authorization of dynamic DNS updates. It's beyond the scope of these examples to show how to setup SIG(0) authorization on the server. <code>trust-dns</code> is known to work with BIND9 and <code>trust-dns-server</code>. Expect in the future for TLS to become a potentially better option for authorization with certificate chains. These examples show using SIG(0) for auth, requires OpenSSL. It's beyond the scope of these examples to describe the configuration for the server.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">fs</span>::<span class="ident">File</span>;
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">io</span>::<span class="ident">Read</span>;
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">net</span>::<span class="ident">Ipv4Addr</span>;
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">str</span>::<span class="ident">FromStr</span>;
+
+<span class="kw">use</span> <span class="ident">chrono</span>::<span class="ident">Duration</span>;
+<span class="kw">use</span> <span class="ident">openssl</span>::<span class="ident">rsa</span>::<span class="ident">Rsa</span>;
+<span class="kw">use</span> <span class="ident">trust_dns</span>::<span class="ident">client</span>::<span class="ident">SyncClient</span>;
+<span class="kw">use</span> <span class="ident">trust_dns</span>::<span class="ident">rr</span>::{<span class="ident">Name</span>, <span class="ident">RData</span>, <span class="ident">Record</span>, <span class="ident">RecordType</span>};
+<span class="kw">use</span> <span class="ident">trust_dns</span>::<span class="ident">rr</span>::<span class="ident">dnssec</span>::{<span class="ident">Algorithm</span>, <span class="ident">Signer</span>, <span class="ident">KeyPair</span>};
+<span class="kw">use</span> <span class="ident">trust_dns</span>::<span class="ident">op</span>::<span class="ident">ResponseCode</span>;
+<span class="kw">use</span> <span class="ident">trust_dns</span>::<span class="ident">rr</span>::<span class="ident">rdata</span>::<span class="ident">key</span>::<span class="ident">KEY</span>;
+
+
+<span class="comment">// The format of the key is dependent on the KeyPair type, in this example we&#39;re using RSA</span>
+<span class="comment">//  if the key was generated with BIND, the binary in Trust-DNS client lib `dnskey-to-pem`</span>
+<span class="comment">//  can be used to convert this to a pem file</span>
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">pem</span> <span class="op">=</span> <span class="ident">File</span>::<span class="ident">open</span>(<span class="string">&quot;my_private_key.pem&quot;</span>).<span class="ident">unwrap</span>();
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">pem_buf</span> <span class="op">=</span> <span class="ident">Vec</span>::<span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>::<span class="ident">new</span>();
+<span class="ident">pem</span>.<span class="ident">read_to_end</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">pem_buf</span>).<span class="ident">unwrap</span>();
+
+<span class="comment">// Create the RSA key</span>
+<span class="kw">let</span> <span class="ident">rsa</span> <span class="op">=</span> <span class="ident">Rsa</span>::<span class="ident">private_key_from_pem</span>(<span class="kw-2">&amp;</span><span class="ident">pem_buf</span>).<span class="ident">unwrap</span>();
+<span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="ident">KeyPair</span>::<span class="ident">from_rsa</span>(<span class="ident">rsa</span>).<span class="ident">unwrap</span>();
+
+<span class="comment">// Create the RData KEY associated with the key. This example uses defaults for all the</span>
+<span class="comment">//  KeyTrust, KeyUsage, UpdateScope, Protocol. Many of these have been deprecated in current</span>
+<span class="comment">//  DNS RFCs, but are still supported by many servers for auth. See auth docs of the remote</span>
+<span class="comment">//  server for help in understanding it&#39;s requirements and support of these options.</span>
+<span class="kw">let</span> <span class="ident">sig0key</span> <span class="op">=</span> <span class="ident">KEY</span>::<span class="ident">new</span>(<span class="ident">Default</span>::<span class="ident">default</span>(),
+                       <span class="ident">Default</span>::<span class="ident">default</span>(),
+                       <span class="ident">Default</span>::<span class="ident">default</span>(),
+                       <span class="ident">Default</span>::<span class="ident">default</span>(),
+                       <span class="ident">Algorithm</span>::<span class="ident">RSASHA256</span>,
+                       <span class="ident">key</span>.<span class="ident">to_public_bytes</span>().<span class="ident">unwrap</span>());
+
+<span class="comment">// Create the Trust-DNS SIG(0) signing facility. Generally the signer_name is the label</span>
+<span class="comment">//  associated with KEY record in the server.</span>
+<span class="kw">let</span> <span class="ident">signer</span> <span class="op">=</span> <span class="ident">Signer</span>::<span class="ident">sig0</span>(<span class="ident">sig0key</span>,
+                          <span class="ident">key</span>,
+                          <span class="ident">Name</span>::<span class="ident">from_str</span>(<span class="string">&quot;update.example.com.&quot;</span>).<span class="ident">unwrap</span>());
+
+<span class="comment">// Create the DNS client, see above for creating a the connection</span>
+<span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">SyncClient</span>::<span class="ident">with_signer</span>(<span class="ident">conn</span>, <span class="ident">signer</span>);
+
+<span class="comment">// At this point we should have a client capable of sending signed SIG(0) records.</span>
+
+<span class="comment">// Now we can send updates... let&#39;s create a new Record</span>
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">record</span> <span class="op">=</span> <span class="ident">Record</span>::<span class="ident">with</span>(<span class="ident">Name</span>::<span class="ident">from_str</span>(<span class="string">&quot;new.example.com&quot;</span>).<span class="ident">unwrap</span>(),
+                              <span class="ident">RecordType</span>::<span class="ident">A</span>,
+                              <span class="ident">Duration</span>::<span class="ident">minutes</span>(<span class="number">5</span>).<span class="ident">num_seconds</span>() <span class="kw">as</span> <span class="ident">u32</span>);
+<span class="ident">record</span>.<span class="ident">set_rdata</span>(<span class="ident">RData</span>::<span class="ident">A</span>(<span class="ident">Ipv4Addr</span>::<span class="ident">new</span>(<span class="number">100</span>, <span class="number">10</span>, <span class="number">100</span>, <span class="number">10</span>)));
+
+<span class="comment">// the server must be authoritative for this zone</span>
+<span class="kw">let</span> <span class="ident">origin</span> <span class="op">=</span> <span class="ident">Name</span>::<span class="ident">from_str</span>(<span class="string">&quot;example.com.&quot;</span>).<span class="ident">unwrap</span>();
+
+<span class="comment">// Create the record.</span>
+<span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">create</span>(<span class="ident">record</span>, <span class="ident">origin</span>).<span class="ident">unwrap</span>();
+<span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">result</span>.<span class="ident">response_code</span>(), <span class="ident">ResponseCode</span>::<span class="ident">NoError</span>);</pre></div>
+<p><em>Note</em>: The dynamic DNS functions defined by Trust-DNS are expressed as atomic operations, but this depends on support of the remote server. For example, the <code>create</code> operation shown above, should only succeed if there is no <code>RecordSet</code> of the specified type at the specified label. The other update operations are <code>append</code>, <code>compare_and_swap</code>, <code>delete_by_rdata</code>, <code>delete_rrset</code>, and <code>delete_all</code>. See the documentation for each of these methods on the <code>Client</code> trait.</p>
+<h2 id="async-usage" class="section-header"><a href="#async-usage">Async usage</a></h2>
+<p>The below example uses a single threaded tokio runtime example for the client. Tokio can get much more complex with multiple runtimes on many threads. This example is meant to show basic usage, the Tokio documentation should be reviewed for more advanced usage.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">net</span>::{<span class="ident">Ipv4Addr</span>, <span class="ident">SocketAddr</span>};
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">str</span>::<span class="ident">FromStr</span>;
+<span class="kw">use</span> <span class="ident">tokio</span>::<span class="ident">runtime</span>::<span class="ident">current_thread</span>::<span class="ident">Runtime</span>;
+
+<span class="kw">use</span> <span class="ident">trust_dns</span>::<span class="ident">udp</span>::<span class="ident">UdpClientStream</span>;
+<span class="kw">use</span> <span class="ident">trust_dns</span>::<span class="ident">client</span>::{<span class="ident">Client</span>, <span class="ident">ClientFuture</span>, <span class="ident">ClientHandle</span>};
+<span class="kw">use</span> <span class="ident">trust_dns</span>::<span class="ident">rr</span>::{<span class="ident">DNSClass</span>, <span class="ident">Name</span>, <span class="ident">RData</span>, <span class="ident">Record</span>, <span class="ident">RecordType</span>};
+<span class="kw">use</span> <span class="ident">trust_dns</span>::<span class="ident">op</span>::<span class="ident">ResponseCode</span>;
+<span class="kw">use</span> <span class="ident">trust_dns</span>::<span class="ident">rr</span>::<span class="ident">rdata</span>::<span class="ident">key</span>::<span class="ident">KEY</span>;
+
+<span class="comment">// We&#39;ll be using the current threads Tokio Runtime</span>
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">runtime</span> <span class="op">=</span> <span class="ident">Runtime</span>::<span class="ident">new</span>().<span class="ident">unwrap</span>();
+
+<span class="comment">// We need a connection, TCP and UDP are supported by DNS servers</span>
+<span class="comment">//   (tcp construction is slightly different as it needs a multiplexer)</span>
+<span class="kw">let</span> <span class="ident">stream</span> <span class="op">=</span> <span class="ident">UdpClientStream</span>::<span class="ident">new</span>(([<span class="number">8</span>,<span class="number">8</span>,<span class="number">8</span>,<span class="number">8</span>], <span class="number">53</span>).<span class="ident">into</span>());
+
+<span class="comment">// Create a new client, the bg is a background future which handles</span>
+<span class="comment">//   the multiplexing of the DNS requests to the server.</span>
+<span class="comment">//   the client is a handle to an unbounded queue for sending requests via the</span>
+<span class="comment">//   background. The background must be scheduled to run before the client can</span>
+<span class="comment">//   send any dns requests</span>
+<span class="kw">let</span> (<span class="ident">bg</span>, <span class="kw-2">mut</span> <span class="ident">client</span>) <span class="op">=</span> <span class="ident">ClientFuture</span>::<span class="ident">connect</span>(<span class="ident">stream</span>);
+
+<span class="comment">// run the background task</span>
+<span class="ident">runtime</span>.<span class="ident">spawn</span>(<span class="ident">bg</span>);
+
+<span class="comment">// Create a query future</span>
+<span class="kw">let</span> <span class="ident">query</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">query</span>(<span class="ident">Name</span>::<span class="ident">from_str</span>(<span class="string">&quot;www.example.com.&quot;</span>).<span class="ident">unwrap</span>(), <span class="ident">DNSClass</span>::<span class="ident">IN</span>, <span class="ident">RecordType</span>::<span class="ident">A</span>);
+
+<span class="comment">// wait for its response</span>
+<span class="kw">let</span> <span class="ident">response</span> <span class="op">=</span> <span class="ident">runtime</span>.<span class="ident">block_on</span>(<span class="ident">query</span>).<span class="ident">unwrap</span>();
+
+<span class="comment">// validate it&#39;s what we expected</span>
+<span class="kw">if</span> <span class="kw">let</span> <span class="kw-2">&amp;</span><span class="ident">RData</span>::<span class="ident">A</span>(<span class="ident">addr</span>) <span class="op">=</span> <span class="ident">response</span>.<span class="ident">answers</span>()[<span class="number">0</span>].<span class="ident">rdata</span>() {
+    <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">addr</span>, <span class="ident">Ipv4Addr</span>::<span class="ident">new</span>(<span class="number">93</span>, <span class="number">184</span>, <span class="number">216</span>, <span class="number">34</span>));
+}</pre></div>
+</div><h2 id='reexports' class='section-header'><a href="#reexports">Re-exports</a></h2>
+<table><tr><td><code>pub extern crate <a class="mod" href="../trust_dns_proto/index.html" title="mod trust_dns_proto">trust_dns_proto</a> as proto;</code></td></tr></table><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
+<table><tr class='module-item'><td><a class="mod" href="client/index.html" title='trust_dns::client mod'>client</a></td><td class='docblock-short'><p>DNS Client associated classes for performing queries and other operations.</p>
+</td></tr><tr class='module-item'><td><a class="mod" href="error/index.html" title='trust_dns::error mod'>error</a></td><td class='docblock-short'><p>All defined errors for Trust-DNS</p>
+</td></tr><tr class='module-item'><td><a class="mod" href="https/index.html" title='trust_dns::https mod'>https</a></td><td class='docblock-short'><p>The https module which contains all https related connection types</p>
+</td></tr><tr class='module-item'><td><a class="mod" href="multicast/index.html" title='trust_dns::multicast mod'>multicast</a></td><td class='docblock-short'><p>UDP protocol related components for DNS</p>
+</td></tr><tr class='module-item'><td><a class="mod" href="op/index.html" title='trust_dns::op mod'>op</a></td><td class='docblock-short'><p>Operations to send with a <code>Client</code> or server, e.g. <code>Query</code>, <code>Message</code>, or <code>UpdateMessage</code> can
+be used to gether to either query or update resource records sets.</p>
+</td></tr><tr class='module-item'><td><a class="mod" href="rr/index.html" title='trust_dns::rr mod'>rr</a></td><td class='docblock-short'><p>Resource record related components, e.g. <code>Name</code> aka label, <code>Record</code>, <code>RData</code>, ...</p>
+</td></tr><tr class='module-item'><td><a class="mod" href="serialize/index.html" title='trust_dns::serialize mod'>serialize</a></td><td class='docblock-short'><p>Contains serialization libraries for <code>binary</code> and text, <code>txt</code>.</p>
+</td></tr><tr class='module-item'><td><a class="mod" href="tcp/index.html" title='trust_dns::tcp mod'>tcp</a></td><td class='docblock-short'><p>TCP protocol related components for DNS</p>
+</td></tr><tr class='module-item'><td><a class="mod" href="udp/index.html" title='trust_dns::udp mod'>udp</a></td><td class='docblock-short'><p>UDP protocol related components for DNS</p>
+</td></tr></table><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table><tr class='module-item'><td><a class="struct" href="struct.BufClientStreamHandle.html" title='trust_dns::BufClientStreamHandle struct'>BufClientStreamHandle</a></td><td class='docblock-short'><p>A buffering stream bound to a <code>SocketAddr</code></p>
+</td></tr><tr class='module-item'><td><a class="struct" href="struct.BufStreamHandle.html" title='trust_dns::BufStreamHandle struct'>BufStreamHandle</a></td><td class='docblock-short'><p>A sender to which serialized DNS Messages can be sent</p>
+</td></tr></table><h2 id='functions' class='section-header'><a href="#functions">Functions</a></h2>
+<table><tr class='module-item'><td><a class="fn" href="fn.version.html" title='trust_dns::version fn'>version</a></td><td class='docblock-short'><p>Returns a version as specified in Cargo.toml</p>
+</td></tr></table></section><section id="search" class="content hidden"></section><section class="footer"></section><aside id="help" class="hidden"><div><h1 class="hidden">Help</h1><div class="shortcuts"><h2>Keyboard Shortcuts</h2><dl><dt><kbd>?</kbd></dt><dd>Show this help dialog</dd><dt><kbd>S</kbd></dt><dd>Focus the search field</dd><dt><kbd>↑</kbd></dt><dd>Move up in search results</dd><dt><kbd>↓</kbd></dt><dd>Move down in search results</dd><dt><kbd>↹</kbd></dt><dd>Switch tab</dd><dt><kbd>&#9166;</kbd></dt><dd>Go to active search result</dd><dt><kbd>+</kbd></dt><dd>Expand all sections</dd><dt><kbd>-</kbd></dt><dd>Collapse all sections</dd></dl></div><div class="infos"><h2>Search Tricks</h2><p>Prefix searches with a type followed by a colon (e.g., <code>fn:</code>) to restrict the search to a given type.</p><p>Accepted types are: <code>fn</code>, <code>mod</code>, <code>struct</code>, <code>enum</code>, <code>trait</code>, <code>type</code>, <code>macro</code>, and <code>const</code>.</p><p>Search functions by type signature (e.g., <code>vec -> usize</code> or <code>* -> vec</code>)</p><p>Search multiple things at once by splitting your query with comma (e.g., <code>str,u8</code> or <code>String,struct:Vec,test</code>)</p></div></div></aside><script>window.rootPath = "../";window.currentCrate = "trust_dns";</script><script src="../aliases.js"></script><script src="../main.js"></script><script defer src="../search-index.js"></script></body></html>

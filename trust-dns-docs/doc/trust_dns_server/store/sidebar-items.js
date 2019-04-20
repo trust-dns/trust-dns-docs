@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["StoreConfig","Enumeration over all Store configurations"]],"mod":[["file","Master file based serving with Dynamic DNS and journaling support"],["forwarder","Forwarding, resolver, related types"],["in_memory","Master file based serving with Dynamic DNS and journaling support"],["sqlite","SQLite serving with Dynamic DNS and journaling support"]]});

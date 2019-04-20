@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["TcpClientConnection","Tcp client connection"],["TcpClientStream","Tcp client stream"],["TcpStream","A Stream used for sending data to and from a remote DNS endpoint (client or server)."]]});

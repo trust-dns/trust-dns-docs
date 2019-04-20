@@ -1,0 +1,1 @@
+initSidebarItems({"mod":[["authority","All authority related types"],["persistence","All zone persistence related types"]],"struct":[["SqliteConfig","Configuration for master file for sqlite based zones"]]});
