@@ -1,1 +1,7 @@
 target/**
+
+# these are artifacts of the book and doc incorporated into the site
+#  we don't want them checked in.
+site/static/trust-dns-book/book/**
+site/static/trust-dns-docs/doc/**
+site/static/img/logo.svg

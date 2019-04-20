@@ -8,6 +8,7 @@ BOOK_TARGET_DIR := $(abspath ${SITE_DIR}/static/trust-dns-book/book)
 DOCS_TARGET_DIR := $(abspath ${SITE_DIR}/static/trust-dns-docs/doc)
 
 DOCS_SRC_DIR := $(abspath ${MAKE_DIR}/trust-dns/target/doc)
+WORKTREE_DIR := /tmp/trust-dns-docs
 
 .PHONY: default
 default: site
@@ -26,6 +27,9 @@ ${DOCS_TARGET_DIR}:
 
 trust-dns/.git:
 	git submodule update --init --depth 1 trust-dns
+	cd trust-dns && \
+	  git fetch --depth 1 origin && \
+	  git reset --hard origin/master
 
 trust-dns: trust-dns/.git
 	# trust-dns
@@ -63,6 +67,19 @@ docs: trust-dns ${DOCS_TARGET_DIR}
 	rm -rf ${DOCS_TARGET_DIR}
 	cp -rp ${DOCS_SRC_DIR} ${DOCS_TARGET_DIR}
 
+.PHONY: deploy
+deploy: site
+	@echo "=====> deploying to github"
+	git worktree add ${WORKTREE_DIR} gh-pages
+	rm -rf ${WORKTREE_DIR}/*
+	cp -rp ${SITE_TARGET_DIR}/* ${WORKTREE_DIR}
+	cd ${WORKTREE_DIR} && \
+		git add -A && \
+		git commit -m "deployed on $(shell date) by ${USER}" && \
+		git push origin gh-pages
+	git worktree remove ${WORKTREE_DIR}
+	git worktree prune
+
 .PHONY: clean
 clean:
 	@echo "=====> clean"
@@ -71,3 +88,5 @@ clean:
 	rm -rf ${DOCS_TARGET_DIR}
 	rm -rf ${DOCS_SRC_DIR}
 	git submodule deinit -f trust-dns
+	git worktree remove -f ${WORKTREE_DIR} || true
+	git worktree prune || true

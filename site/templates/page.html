@@ -15,7 +15,7 @@
     {% endblock post %}
 
     {% if page.extra.link %}
-    <a class="button small" href="{{page.extra.link}}">Continue Reading →</a>
+    <a class="button small" href="{{ config.base_url }}/{{ page.extra.link }}">Continue Reading →</a>
     {% endif %}
   </article>
 </section>

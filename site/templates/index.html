@@ -3,11 +3,11 @@
 
 
 {% block content %}
-<header class="header" style="background-image: url(/img/{{config.extra.header_bg}})">
+<header class="header" style="background-image: url({{ config.base_url }}/img/{{config.extra.header_bg}})">
   {% block header %}
   <figure class="user_logo">
     <a href="{{config.base_url}}">
-      <img src="/img/{{config.extra.profile}}" />
+      <img src="{{ config.base_url }}/img/{{config.extra.profile}}" />
     </a>
   </figure>
   <h2 class="site_title">{{config.extra.description}}</h2>
@@ -23,7 +23,7 @@
   <article id="{{page.title}}" class="index_card">
     <h1 class="index_card_title">
       {% if page.extra.link %}
-      <a href="{{page.extra.link}}" id="article_link">{{page.title}}</a>
+      <a href="{{ config.base_url }}/{{ page.extra.link }}" id="article_link">{{page.title}}</a>
       {% else %}
       <a href="{{page.permalink}}" id="article_link">{{page.title}}</a>
       {% endif %}
@@ -37,7 +37,7 @@
     <p class="article_content">{{ page.content | safe | striptags | truncate }}</p>
     <!-- this links to the actual book -->
     {% if page.extra.link %}
-    <a class="button small bottom" href="{{page.extra.link}}">Continue Reading →</a>
+    <a class="button small bottom" href="{{ config.base_url }}/{{ page.extra.link }}">Continue Reading →</a>
     {% else %}
     <a class="button small bottom" href="{{page.permalink}}">Continue Reading →</a>
     {% endif %}
