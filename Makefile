@@ -78,16 +78,12 @@ docs: trust-dns ${DOCS_TARGET_DIR}
 	rm -rf ${DOCS_TARGET_DIR}
 	cp -rp ${DOCS_SRC_DIR} ${DOCS_TARGET_DIR}
 
-.PHONY: is_master
-is_master:
-ifeq ("${CURRENT_BRANCH}", "master")
-	true
-else
-	false
-endif
-
 .PHONY: deploy
-deploy: is_master site
+deploy: site
+ifneq ("${CURRENT_BRANCH}", "master")
+	@echo "=====> deploy will only work from the master branch, skipping"
+	@true
+else
 	@echo "=====> deploying to github"
 	git worktree add ${WORKTREE_DIR} gh-pages
 	rm -rf ${WORKTREE_DIR}/*
@@ -98,6 +94,7 @@ deploy: is_master site
 		git push origin gh-pages
 	git worktree remove ${WORKTREE_DIR}
 	git worktree prune
+endif
 
 .PHONY: clean
 clean:

@@ -11,7 +11,6 @@ before_install:
   - bash install_mdbook.sh
 
 ## All scripts are run above...
-script:
-  - make deploy
+script: make site
 
-#after_success: scripts/run_kcov.sh
+after_success: make deploy
