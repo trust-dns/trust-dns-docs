@@ -24,10 +24,10 @@ ${SITE_TARGET_DIR}: ${TARGET_DIR}
 	mkdir -p ${SITE_TARGET_DIR}
 
 ${BOOK_TARGET_DIR}:
-	mkdir ${BOOK_TARGET_DIR}
+	mkdir -p ${BOOK_TARGET_DIR}
 
 ${DOCS_TARGET_DIR}:
-	mkdir ${DOCS_TARGET_DIR}
+	mkdir -p ${DOCS_TARGET_DIR}
 
 trust-dns/.git:
 	git submodule update --init --depth 1 trust-dns
