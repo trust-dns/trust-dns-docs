@@ -1,4 +1,4 @@
-[![Trust-DNS](./img/logo.svg)](https://github.com/bluejekyll/trust-dns)
+[![Trust-DNS](./img/logo.svg)](https://trust-dns.github.io/trust-dns-docs)
 
 # Introduction to Trust-DNS
 
