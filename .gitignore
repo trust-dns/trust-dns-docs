@@ -5,3 +5,4 @@ target/**
 site/static/trust-dns-book/book/**
 site/static/trust-dns-docs/doc/**
 site/static/img/logo.svg
+book/src/img/logo.svg

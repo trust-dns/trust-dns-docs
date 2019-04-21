@@ -3,3 +3,6 @@ authors = ["Benjamin Fry"]
 multilingual = false
 src = "src"
 title = "The Book of Trust-DNS"
+
+[build]
+create-missing = true

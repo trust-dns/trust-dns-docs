@@ -1,3 +1,6 @@
+ZOLA ?= zola 
+MDBOOK ?= mdbook
+
 MAKE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 SITE_DIR := $(abspath ${MAKE_DIR}/site)
 BOOK_DIR := $(abspath ${MAKE_DIR}/book)
@@ -10,8 +13,9 @@ DOCS_TARGET_DIR := $(abspath ${SITE_DIR}/static/trust-dns-docs/doc)
 DOCS_SRC_DIR := $(abspath ${MAKE_DIR}/trust-dns/target/doc)
 WORKTREE_DIR := /tmp/trust-dns-docs
 
-.PHONY: default
-default: site
+CURRENT_BRANCH = $(strip $(shell git rev-parse --abbrev-ref HEAD))
+
+.DEFAULT_GOAL := site
 
 ${TARGET_DIR}:
 	mkdir -p ${TARGET_DIR}
@@ -34,29 +38,36 @@ trust-dns/.git:
 trust-dns: trust-dns/.git
 	# trust-dns
 
+book/src/img/logo.svg: trust-dns
+	cp trust-dns/logo.svg $@
+
 site/static/img/logo.svg: trust-dns
 	cp trust-dns/logo.svg $@
 
 .PHONY: logo
-logo: site/static/img/logo.svg
+logo: site/static/img/logo.svg book/src/img/logo.svg
+
+.PHONY: site-deps
+site-deps: ${SITE_TARGET_DIR} book docs logo
 
 .PHONY: site
-site: ${SITE_TARGET_DIR} book docs logo
+site: site-deps
 	@echo "=====> site"
 	cd ${SITE_DIR} && \
-	  zola build --base-path ${SITE_DIR} --output-dir ${SITE_TARGET_DIR}
+	  ${ZOLA} build --base-path ${SITE_DIR} --output-dir ${SITE_TARGET_DIR}
 
 .PHONY: serve
-serve: site
+serve: site-deps
 	@echo "=====> serve"
 	cd ${SITE_DIR} && \
-	  zola serve --base-path ${SITE_DIR} --output-dir ${SITE_TARGET_DIR}
+	  ${ZOLA} serve --base-path ${SITE_DIR} --output-dir ${SITE_TARGET_DIR}
 
 .PHONY: book
-book: ${BOOK_TARGET_DIR}
+book: ${BOOK_TARGET_DIR} logo
 	@echo "=====> book"
 	cd ${BOOK_DIR} && \
-	  mdbook build --dest-dir ${BOOK_TARGET_DIR} ${BOOK_DIR}
+	  ${MDBOOK} build --dest-dir ${BOOK_TARGET_DIR} ${BOOK_DIR}
+	@echo "view book here: file://${BOOK_TARGET_DIR}/index.html"
 
 .PHONY: docs
 docs: trust-dns ${DOCS_TARGET_DIR}
@@ -67,8 +78,16 @@ docs: trust-dns ${DOCS_TARGET_DIR}
 	rm -rf ${DOCS_TARGET_DIR}
 	cp -rp ${DOCS_SRC_DIR} ${DOCS_TARGET_DIR}
 
+.PHONY: is_master
+is_master:
+ifeq ("${CURRENT_BRANCH}", "master")
+	true
+else
+	false
+endif
+
 .PHONY: deploy
-deploy: site
+deploy: is_master site
 	@echo "=====> deploying to github"
 	git worktree add ${WORKTREE_DIR} gh-pages
 	rm -rf ${WORKTREE_DIR}/*

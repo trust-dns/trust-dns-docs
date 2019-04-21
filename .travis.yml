@@ -1,0 +1,17 @@
+sudo: required
+dist: trusty
+language: rust
+
+env:
+  ZOLA=./zola
+  MDBOOK=./mdbook
+
+before_install:
+  - bash install_zola.sh
+  - bash install_mdbook.sh
+
+## All scripts are run above...
+script:
+  - make deploy
+
+#after_success: scripts/run_kcov.sh
