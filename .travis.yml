@@ -9,6 +9,7 @@ env:
 before_install:
   - bash install_zola.sh
   - bash install_mdbook.sh
+  - bash install_openssl_deb.sh
 
 ## All scripts are run above...
 script: make site
