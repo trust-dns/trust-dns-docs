@@ -39,9 +39,11 @@ trust-dns: trust-dns/.git
 	# trust-dns
 
 book/src/img/logo.svg: trust-dns
+	mkdir -p $(dir $@)
 	cp trust-dns/logo.svg $@
 
 site/static/img/logo.svg: trust-dns
+	mkdir -p $(dir $@)
 	cp trust-dns/logo.svg $@
 
 .PHONY: logo
