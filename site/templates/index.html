@@ -5,11 +5,13 @@
 {% block content %}
 <header class="header" style="background-image: url({{ config.base_url }}/img/{{config.extra.header_bg}})">
   {% block header %}
-  <figure class="user_logo">
-    <a href="{{config.base_url}}">
-      <img src="{{ config.base_url }}/img/{{config.extra.profile}}" />
-    </a>
-  </figure>
+  <div class="logo_margin">
+    <figure class="user_logo">
+      <a href="{{config.base_url}}">
+        <img src="{{ config.base_url }}/img/{{config.extra.profile}}" />
+      </a>
+    </figure>
+  </div>
   <h2 class="site_title">{{config.extra.description}}</h2>
   <div>{{config.description}}</div>
   <span class="center">

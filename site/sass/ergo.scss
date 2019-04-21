@@ -28,7 +28,7 @@
 @import 'macros';
 @import 'shortcodes';
 
-$bottom-margin: 10rem;
+$bottom-margin: 5rem;
 
 html, body {
     background-color: $background;
@@ -163,14 +163,14 @@ tr {
         transform: translateY(0);
     }
 }
+
 .user_logo {
-    max-width: 900px;
+    max-width: 12rem;
     //height: 300px;
     display: block;
     
     //border: 5px solid $accent;
     margin: auto;
-    margin-top: 0;
     // transition: all 250ms ease-in-out;
     > a {
         width: auto;
@@ -187,6 +187,10 @@ tr {
         //animation: 250ms ease-in 0s 1 slidein;
         //border: 5px solid $background;
     }
+}
+
+.logo_margin {
+    padding: 1em;
 }
 
 .overlord {
@@ -206,7 +210,8 @@ tr {
     // margin-top: 140px;
     // padding-bottom: 50px;
     // margin-bottom: 50px;
-    border-bottom: 5px solid #5e4949;
+    //border-bottom: 5px solid #5e4949;
+    box-shadow: 0px 5px 5px grey;
     text-align: center;
     > h1,h2,h3 {
         max-width: 600px;
@@ -347,11 +352,12 @@ h1.article_title {
 }
 
 .index_card_list {
-    padding-bottom: 30px;
+    padding-bottom: 2em;
     display: block;
     //position: relative;
-    max-width: 800px;
+    max-width: 600px;
     margin: auto;
+    margin-top: 1em;
     //display: flex;
 }
 
@@ -367,6 +373,7 @@ h1.index_card_title {
     line-height: 2.5rem;
     margin-top: .5em;
     font-weight: 700;
+    text-decoration: underline;
     > a {
         border-bottom: unset;
     }
@@ -378,12 +385,13 @@ h1.index_card_title {
 .index_card {
     display: inline-block;
     text-align: justify;
-    margin: auto;
+    margin: 1em;
     padding: 1em;
     vertical-align: top;
     //height: 500px;
-    max-width: 300px;
-    min-width: 300px;
+    max-width: 230px;
+    min-width: 230px;
+    box-shadow: 2px 5px 5px grey;
     > ul {
         max-width: 300px;
     }
@@ -397,7 +405,7 @@ h1.index_card_title {
         color: $text;
     }
     > h1,h2,h3,h4,h5,h6 {
-        max-width: 600px
+        max-width: 300px
     }
 }
 
