@@ -30,6 +30,7 @@ ${DOCS_TARGET_DIR}:
 	mkdir -p ${DOCS_TARGET_DIR}
 
 trust-dns/.git:
+	@echo "=====> linking trust-dns"
 	git submodule update --init --depth 1 trust-dns
 	cd trust-dns && \
 	  git fetch --depth 1 origin && \

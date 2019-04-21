@@ -3,8 +3,8 @@ dist: trusty
 language: rust
 
 env:
-  ZOLA=./zola
-  MDBOOK=./mdbook
+  ZOLA=${TRAVIS_BUILD_DIR}/zola
+  MDBOOK=${TRAVIS_BUILD_DIR}/mdbook
 
 before_install:
   - bash install_zola.sh
@@ -12,5 +12,4 @@ before_install:
 
 ## All scripts are run above...
 script: make site
-
 after_success: make deploy
