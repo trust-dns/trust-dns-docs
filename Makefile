@@ -84,7 +84,7 @@ docs: trust-dns ${DOCS_TARGET_DIR}
 .PHONY: deploy
 deploy: site
 ifneq ("${CURRENT_BRANCH}", "master")
-	@echo "=====> deploy will only work from the master branch, skipping"
+	@echo "=====> deploy will only work from the master branch, skipping ${CURRENT_BRANCH}"
 	@true
 else
 	@echo "=====> deploying to github"

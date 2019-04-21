@@ -14,3 +14,8 @@ before_install:
 ## All scripts are run above...
 script: make site
 after_success: make deploy
+
+stages:
+  - name: deploy
+    # require the branch name to be master (note for PRs this is the base branch name)
+    if: branch = master
