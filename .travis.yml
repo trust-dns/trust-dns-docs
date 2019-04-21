@@ -6,6 +6,7 @@ env:
   ZOLA=${TRAVIS_BUILD_DIR}/zola
   MDBOOK=${TRAVIS_BUILD_DIR}/mdbook
   CURRENT_BRANCH=${TRAVIS_BRANCH}
+  SITE_TARGET_DIR=${TRAVIS_BUILD_DIR}/target/site
 
 before_install:
   - bash install_zola.sh
@@ -14,4 +15,17 @@ before_install:
 
 ## All scripts are run above...
 script: make site
-after_success: make deploy
+
+# using pages deploy
+#after_success: make deploy
+
+deploy:
+  provider: pages
+  skip_cleanup: true
+  github_token: $GH_PAGES_TOKEN
+  keep_history: true
+  local_dir: $SITE_TARGET_DIR
+  target_branch: gh-pages
+  verbose: true
+  on:
+    branch: master

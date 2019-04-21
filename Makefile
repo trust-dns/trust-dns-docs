@@ -6,7 +6,7 @@ SITE_DIR := $(abspath ${MAKE_DIR}/site)
 BOOK_DIR := $(abspath ${MAKE_DIR}/book)
 
 TARGET_DIR := $(abspath ${MAKE_DIR}/target/site-docs)
-SITE_TARGET_DIR := $(abspath ${TARGET_DIR}/site)
+SITE_TARGET_DIR ?= $(abspath ${TARGET_DIR}/site)
 BOOK_TARGET_DIR := $(abspath ${SITE_DIR}/static/trust-dns-book/book)
 DOCS_TARGET_DIR := $(abspath ${SITE_DIR}/static/trust-dns-docs/doc)
 
