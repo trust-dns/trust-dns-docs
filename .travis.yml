@@ -5,6 +5,7 @@ language: rust
 env:
   ZOLA=${TRAVIS_BUILD_DIR}/zola
   MDBOOK=${TRAVIS_BUILD_DIR}/mdbook
+  CURRENT_BRANCH=${TRAVIS_BRANCH}
 
 before_install:
   - bash install_zola.sh
@@ -14,8 +15,3 @@ before_install:
 ## All scripts are run above...
 script: make site
 after_success: make deploy
-
-stages:
-  - name: deploy
-    # require the branch name to be master (note for PRs this is the base branch name)
-    if: branch = master

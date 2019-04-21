@@ -13,7 +13,7 @@ DOCS_TARGET_DIR := $(abspath ${SITE_DIR}/static/trust-dns-docs/doc)
 DOCS_SRC_DIR := $(abspath ${MAKE_DIR}/trust-dns/target/doc)
 WORKTREE_DIR := /tmp/trust-dns-docs
 
-CURRENT_BRANCH = $(strip $(shell git rev-parse --abbrev-ref HEAD))
+CURRENT_BRANCH ?= $(strip $(shell git rev-parse --abbrev-ref HEAD))
 
 .DEFAULT_GOAL := site
 
