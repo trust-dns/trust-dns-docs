@@ -88,7 +88,7 @@ ifneq ("${CURRENT_BRANCH}", "master")
 	@true
 else
 	@echo "=====> deploying to github"
-	git fetch --depth 1 origin gh-pages
+	git fetch --depth 1 origin gh-pages:gh-pages
 	git worktree add ${WORKTREE_DIR} gh-pages
 	rm -rf ${WORKTREE_DIR}/*
 	cp -rp ${SITE_TARGET_DIR}/* ${WORKTREE_DIR}
